@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Starlify Shop</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg:#050505;
+    --bg-elevated:#121214;
+    --bg-card:#17171A;
+    --bg-card-2:#1D1D21;
+    --stroke: rgba(255,255,255,0.09);
+    --stroke-soft: rgba(255,255,255,0.05);
+    --text:#F5F5F2;
+    --text-dim:#96969E;
+    --gold:#FFB020;
+    --gold-grad: linear-gradient(135deg,#FFCE59,#FF9B1A);
+    --gold-soft: rgba(255,176,32,0.13);
+    --indigo-soft: rgba(84,87,214,0.16);
+    --green:#3ED598;
+    --red:#FF6B6B;
+    --radius-lg:20px;
+    --radius-md:14px;
+    --radius-sm:10px;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; }
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+    overflow-x:hidden;
+    background-image:
+      radial-gradient(circle at 8% 0%, rgba(255,176,32,0.07), transparent 38%),
+      radial-gradient(circle at 100% 10%, rgba(84,87,214,0.10), transparent 40%);
+  }
+  button{ font-family:inherit; }
+  #app{ min-height:100%; display:flex; flex-direction:column; }
+  .screen{ display:none; flex-direction:column; flex:1; }
+  .screen.active{ display:flex; }
+  ::-webkit-scrollbar{ width:0; height:0; }
+  .hidden{ display:none !important; }
+
+  .topbar{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px 6px; }
+  .topbar h1{ font-size:16.5px; margin:0; font-weight:700; letter-spacing:-0.2px; }
+  .icon-btn{ width:34px;height:34px;border-radius:50%; flex:none; display:flex;align-items:center;justify-content:center; background:var(--bg-elevated); border:1px solid var(--stroke); color:var(--text-dim); font-size:15px; cursor:pointer; }
+  .chip-row{ display:flex; align-items:center; gap:6px; }
+  .chip{ display:flex; align-items:center; gap:5px; font-size:12px; font-weight:700; padding:7px 10px; border-radius:999px; background:var(--bg-elevated); border:1px solid var(--stroke); color:var(--text); cursor:pointer; white-space:nowrap; }
+  .chip.gold{ color:var(--gold); border-color:rgba(255,176,32,0.3); background:var(--gold-soft); }
+  .chip.indigo{ color:#9EA0FF; border-color:rgba(84,87,214,0.35); background:var(--indigo-soft); }
+
+  .user-row{ margin:10px 16px 0; display:flex; align-items:center; justify-content:space-between; cursor:pointer; }
+  .user-row .who{ display:flex; align-items:center; gap:10px; min-width:0; }
+  .avatar{ width:42px;height:42px;border-radius:50%; flex:none; background:var(--gold-grad); color:#241400; display:flex;align-items:center;justify-content:center; font-weight:800; font-size:16px; overflow:hidden; }
+  .avatar img{ width:100%;height:100%; object-fit:cover; }
+  .user-row .name{ font-size:15px; font-weight:700; }
+  .user-row .sub{ font-size:11.5px; color:var(--text-dim); }
+  .user-row .chev{ color:var(--text-dim); font-size:16px; }
+
+  .balance-card{ margin:14px 16px 4px; padding:18px 20px; border-radius:var(--radius-lg); background: linear-gradient(155deg, #1A1300, var(--bg-elevated) 65%); border:1px solid var(--stroke); position:relative; overflow:hidden; }
+  .balance-card::after{ content:""; position:absolute; right:8px; top:-8px; width:104px; height:104px; transform:rotate(12deg); background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23FFB020' fill-opacity='.09' d='M16 2.5l4.1 8.6 9.4 1.2-6.9 6.5 1.8 9.4L16 23.4l-8.4 4.8 1.8-9.4L2.5 12.3l9.4-1.2z'/%3E%3C/svg%3E") no-repeat center/contain; }
+  .balance-label{ font-size:12px; color:var(--text-dim); }
+  .balance-amount{ font-size:30px; font-weight:800; margin-top:2px; letter-spacing:-0.5px; }
+  .balance-amount span{ font-size:14px; color:var(--text-dim); font-weight:600; margin-left:4px; }
+  .balance-actions{ display:flex; gap:8px; margin-top:15px; }
+  .balance-actions button{ flex:1; padding:11px 0; border-radius:var(--radius-sm); border:1px solid var(--stroke); background:rgba(255,255,255,0.03); color:var(--text); font-size:13px; font-weight:700; cursor:pointer; }
+  .balance-actions button.primary{ background:var(--gold-grad); color:#241400; border-color:transparent; }
+
+  .section-title{ margin:20px 16px 9px; font-size:12.5px; color:var(--text-dim); font-weight:700; }
+  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:9px; margin:0 16px; }
+  .card{ background:var(--bg-card); border:1px solid var(--stroke); border-radius:var(--radius-md); padding:15px 13px; display:flex; flex-direction:column; gap:9px; cursor:pointer; }
+  .card .glyph{ width:36px;height:36px;border-radius:10px; display:flex;align-items:center;justify-content:center; font-size:16px; background:var(--gold-soft); color:var(--gold); }
+  .card.indigo .glyph{ background:var(--indigo-soft); color:#9EA0FF; }
+  .card .card-title{ font-size:14px; font-weight:700; }
+  .card .card-sub{ font-size:11.5px; color:var(--text-dim); }
+
+  .list-row{ margin:0 16px 9px; display:flex; align-items:center; justify-content:space-between; background:var(--bg-card); border:1px solid var(--stroke); border-radius:var(--radius-md); padding:13px 15px; cursor:pointer; }
+  .list-row .lt{ display:flex; align-items:center; gap:11px; }
+  .list-row .glyph{ font-size:16px; width:22px; text-align:center; }
+  .list-row .title{ font-size:13.5px; font-weight:650; }
+  .list-row .sub{ font-size:11px; color:var(--text-dim); }
+  .list-row .chev{ color:var(--text-dim); }
+
+  .bottom-spacer{ height:100px; }
+
+  .tabbar{ position:fixed; left:0; right:0; bottom:0; z-index:15; padding:8px 6px calc(9px + env(safe-area-inset-bottom,0px)); background:rgba(5,5,5,0.92); backdrop-filter:blur(16px); border-top:1px solid var(--stroke); display:flex; justify-content:space-around; }
+  .tab{ display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--text-dim); font-size:10.5px; font-weight:600; background:none; border:none; padding:4px 8px; cursor:pointer; flex:1; }
+  .tab .ic{ font-size:18px; }
+  .tab.active{ color:var(--gold); }
+
+  .subheader{ display:flex; align-items:center; gap:12px; padding:14px 16px 4px; }
+  .subheader .back{ width:32px;height:32px;border-radius:50%; display:flex;align-items:center;justify-content:center; background:var(--bg-elevated); border:1px solid var(--stroke); color:var(--text); cursor:pointer; flex:none; }
+  .subheader h2{ font-size:16px; margin:0; font-weight:700; }
+
+  .info-card{ margin:14px 16px; padding:18px; background:var(--bg-card); border:1px solid var(--stroke); border-radius:var(--radius-lg); }
+  .kv-row{ display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--stroke-soft); font-size:13px; }
+  .kv-row:last-child{ border-bottom:none; }
+  .kv-row .k{ color:var(--text-dim); }
+  .kv-row .v{ font-weight:650; }
+
+  .price-line{ margin:0 16px 8px; display:flex; align-items:center; justify-content:space-between; background:var(--bg-card); border:1px solid var(--stroke); border-radius:var(--radius-sm); padding:12px 14px; }
+  .price-line .pl-title{ font-size:13.5px; font-weight:650; }
+  .price-line .pl-price{ font-size:14px; font-weight:750; color:var(--gold); }
+
+  .empty-state{ text-align:center; color:var(--text-dim); font-size:13px; padding:60px 30px; white-space:pre-line; }
+
+  .order-card{ margin:0 16px 10px; padding:14px 15px; background:var(--bg-card); border:1px solid var(--stroke); border-radius:var(--radius-md); }
+  .order-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .order-num{ font-size:12px; color:var(--text-dim); }
+  .status-pill{ font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:999px; }
+  .st-new{ background:rgba(84,87,214,0.18); color:#9EA0FF; }
+  .st-wait{ background:rgba(255,176,32,0.16); color:var(--gold); }
+  .st-review{ background:rgba(255,176,32,0.16); color:var(--gold); }
+  .st-done{ background:rgba(62,213,152,0.16); color:var(--green); }
+  .st-rejected{ background:rgba(255,107,107,0.16); color:var(--red); }
+  .order-item{ font-size:14px; font-weight:650; }
+  .order-meta{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+
+  .settings-row{ margin:0 16px 9px; display:flex; align-items:center; justify-content:space-between; background:var(--bg-card); border:1px solid var(--stroke); border-radius:var(--radius-md); padding:14px 15px; }
+  .settings-row .t{ font-size:13.5px;font-weight:650; }
+  .settings-row .s{ font-size:11px;color:var(--text-dim); }
+  .lang-opt{ display:flex; align-items:center; justify-content:space-between; padding:13px 15px; background:var(--bg-card); border:1px solid var(--stroke); border-radius:var(--radius-sm); margin:0 16px 8px; cursor:pointer; }
+  .lang-opt.active{ border-color:var(--gold); background:var(--gold-soft); }
+  .switch{ width:42px;height:24px;border-radius:14px; background:var(--bg-card-2); border:1px solid var(--stroke); position:relative; cursor:pointer; flex:none; }
+  .switch.on{ background:var(--gold-grad); border-color:transparent; }
+  .switch .dot{ position:absolute; top:2px; left:2px; width:18px;height:18px;border-radius:50%; background:#fff; transition:.2s; }
+  .switch.on .dot{ left:20px; }
+
+  .ref-hero{ margin:14px 16px; padding:22px 18px; border-radius:var(--radius-lg); background:linear-gradient(150deg,#171034,var(--bg-elevated) 70%); border:1px solid var(--stroke); text-align:center; }
+  .ref-hero .big{ font-size:28px; font-weight:800; }
+  .ref-hero .lab{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+  .ref-stats{ display:flex; gap:10px; margin:0 16px 6px; }
+  .ref-stat{ flex:1; background:var(--bg-card); border:1px solid var(--stroke); border-radius:var(--radius-md); padding:14px; text-align:center; }
+  .ref-stat .n{ font-size:19px; font-weight:800; }
+  .ref-stat .l{ font-size:11px; color:var(--text-dim); margin-top:2px; }
+  .copy-row{ margin:14px 16px 4px; display:flex; align-items:center; gap:8px; background:var(--bg-card); border:1px solid var(--stroke); border-radius:var(--radius-sm); padding:12px 14px; }
+  .copy-row input{ flex:1; background:none; border:none; color:var(--text-dim); font-size:12.5px; outline:none; }
+  .copy-row button{ background:var(--gold-grad); border:none; color:#241400; font-weight:700; font-size:12px; padding:8px 12px; border-radius:8px; cursor:pointer; flex:none; }
+
+  .chat-body{ flex:1; overflow-y:auto; padding:14px 16px; display:flex; flex-direction:column; gap:10px; }
+  .msg{ max-width:78%; padding:10px 13px; border-radius:16px; font-size:13.5px; line-height:1.4; }
+  .msg.bot{ align-self:flex-start; background:var(--bg-card); border:1px solid var(--stroke); border-bottom-left-radius:4px; }
+  .msg.me{ align-self:flex-end; background:var(--gold-grad); color:#241400; border-bottom-right-radius:4px; font-weight:600; }
+  .chat-input-bar{ display:flex; gap:8px; padding:10px 14px calc(12px + env(safe-area-inset-bottom,0px)); border-top:1px solid var(--stroke); background:var(--bg-elevated); }
+  .chat-input-bar input{ flex:1; background:var(--bg-card); border:1px solid var(--stroke); border-radius:999px; padding:11px 16px; color:var(--text); font-size:13.5px; outline:none; }
+  .chat-input-bar button{ width:42px;height:42px;border-radius:50%; border:none; background:var(--gold-grad); color:#241400; font-size:16px; cursor:pointer; flex:none; }
+
+  .sheet-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.65); display:none; z-index:20; }
+  .sheet-overlay.active{ display:block; }
+  .sheet{ position:fixed; left:0; right:0; bottom:0; z-index:21; max-height:92vh; overflow-y:auto; background:var(--bg-elevated); border-radius:22px 22px 0 0; border:1px solid var(--stroke); border-bottom:none; padding:10px 18px calc(20px + env(safe-area-inset-bottom,0px)); transform:translateY(100%); transition:transform .28s cubic-bezier(.22,.9,.35,1); }
+  .sheet.active{ transform:translateY(0); }
+  .sheet-handle{ width:36px;height:4px;border-radius:2px; background:var(--stroke); margin:6px auto 14px; }
+  .sheet-title{ font-size:17px; font-weight:750; margin-bottom:2px; }
+  .sheet-rate{ font-size:12px; color:var(--text-dim); margin-bottom:14px; }
+
+  .segmented{ display:flex; background:var(--bg-card); border:1px solid var(--stroke); border-radius:var(--radius-sm); padding:3px; margin-bottom:15px; }
+  .segmented button{ flex:1; padding:9px 0; border:none; background:none; color:var(--text-dim); font-size:12.5px; font-weight:700; border-radius:8px; cursor:pointer; }
+  .segmented button.active{ background:var(--bg-elevated); color:var(--gold); box-shadow:0 0 0 1px var(--stroke); }
+
+  .field-label{ font-size:12px; color:var(--text-dim); margin:14px 0 8px; font-weight:600; }
+  .who-toggle{ display:flex; gap:8px; }
+  .who-toggle button{ flex:1; padding:10px; border-radius:var(--radius-sm); border:1px solid var(--stroke); background:var(--bg-card); color:var(--text); font-size:12.5px; font-weight:650; cursor:pointer; }
+  .who-toggle button.active{ border-color:var(--gold); color:var(--gold); background:var(--gold-soft); }
+
+  input[type=text],input[type=number],textarea{ width:100%; padding:12px 14px; border-radius:var(--radius-sm); border:1px solid var(--stroke); background:var(--bg-card); color:var(--text); font-size:14px; outline:none; font-family:inherit; }
+  textarea{ resize:none; min-height:70px; }
+  input::placeholder,textarea::placeholder{ color:var(--text-dim); }
+
+  .stepper{ display:flex; align-items:center; gap:10px; }
+  .stepper button{ width:40px;height:40px;border-radius:10px; border:1px solid var(--stroke); background:var(--bg-card); color:var(--text); font-size:18px; cursor:pointer; }
+  .stepper input{ text-align:center; flex:1; }
+
+  .preset-row{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .preset-row button{ padding:7px 12px; border-radius:999px; border:1px solid var(--stroke); background:var(--bg-card); color:var(--text-dim); font-size:12px; cursor:pointer; }
+  .preset-row button.active{ border-color:var(--gold); color:var(--gold); background:var(--gold-soft); }
+
+  .prem-options{ display:flex; flex-direction:column; gap:8px; }
+  .prem-option{ display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-radius:var(--radius-sm); border:1px solid var(--stroke); background:var(--bg-card); cursor:pointer; }
+  .prem-option.active{ border-color:var(--gold); background:var(--gold-soft); }
+  .prem-option .p-title{ font-size:13px; font-weight:650; }
+  .prem-option .p-price{ font-size:12.5px; color:var(--text-dim); }
+  .prem-option.active .p-price{ color:var(--gold); }
+
+  .summary-row{ display:flex; justify-content:space-between; align-items:center; margin-top:18px; padding-top:14px; border-top:1px dashed var(--stroke); }
+  .summary-row .lab{ font-size:12.5px; color:var(--text-dim); }
+  .summary-row .val{ font-size:20px; font-weight:800; }
+  .summary-row .val small{ font-size:11.5px; color:var(--text-dim); font-weight:500; }
+
+  .pay-btn{ width:100%; margin-top:16px; padding:15px 0; border:none; border-radius:var(--radius-md); background:var(--gold-grad); color:#241400; font-size:15px; font-weight:800; cursor:pointer; }
+  .pay-btn:disabled{ opacity:.4; }
+  .btn-ghost-full{ width:100%; margin-top:10px; padding:14px 0; border-radius:var(--radius-md); background:none; color:var(--text-dim); border:1px solid var(--stroke); font-size:14px; font-weight:700; cursor:pointer; }
+  .hint-err{ color:var(--red); font-size:11.5px; margin-top:8px; min-height:14px; }
+
+  .method-card{ display:flex; align-items:center; gap:12px; padding:13px 14px; border-radius:var(--radius-sm); border:1px solid var(--stroke); background:var(--bg-card); margin-bottom:9px; cursor:pointer; }
+  .method-card.active{ border-color:var(--gold); background:var(--gold-soft); }
+  .method-card .m-ic{ font-size:18px; }
+  .method-card .m-title{ font-size:13px; font-weight:650; }
+  .method-card .m-sub{ font-size:11px; color:var(--text-dim); }
+
+  /* payment screen */
+  #payment-content{ padding:0 16px; }
+  .pay-hero{ text-align:center; padding:10px 10px 6px; }
+  .pay-hero .amt{ font-size:26px; font-weight:800; }
+  .pay-hero .num{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+  .spinner{ width:16px;height:16px; border-radius:50%; border:2px solid rgba(36,20,0,0.35); border-top-color:#241400; display:inline-block; animation:spin .7s linear infinite; vertical-align:middle; margin-right:8px; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .thanks-wrap{ display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; padding:34px; text-align:center; }
+  .thanks-badge{ width:84px;height:84px;border-radius:50%; background:radial-gradient(circle at 35% 30%,#4CEBAA,#1E9E6E); display:flex;align-items:center;justify-content:center; font-size:38px; color:#04231A; margin-bottom:22px; box-shadow:0 0 0 8px rgba(62,213,152,0.10); }
+  .thanks-badge.pending{ background:radial-gradient(circle at 35% 30%,#FFD37A,#E08A1B); color:#2A1600; box-shadow:0 0 0 8px rgba(255,176,32,0.10); }
+  .thanks-wrap h2{ font-size:19px; margin:0 0 8px; }
+  .thanks-wrap p{ font-size:13.5px; color:var(--text-dim); line-height:1.55; margin:0 0 22px; max-width:270px; }
+  .thanks-wrap .order-num-txt{ font-size:12px; color:var(--gold); margin-bottom:24px; font-weight:650; }
+  .thanks-actions{ display:flex; flex-direction:column; gap:10px; width:100%; max-width:280px; }
+  .thanks-actions button{ padding:13px 0; border-radius:var(--radius-md); font-size:14px; font-weight:700; cursor:pointer; }
+  .btn-gold{ background:var(--gold-grad); color:#241400; border:none; }
+  .btn-ghost{ background:none; color:var(--text-dim); border:1px solid var(--stroke); }
+
+  .ico{ width:1.15em; height:1.15em; display:inline-block; vertical-align:-0.2em; flex:none; }
+  .emb{ width:1.2em; height:1.2em; display:inline-block; vertical-align:-0.25em; flex:none; object-fit:contain; }
+  .card .glyph .ico,.list-row .glyph .ico{ width:20px; height:20px; }
+  .card .glyph .emb{ width:24px; height:24px; }
+  .list-row .glyph{ display:flex; align-items:center; justify-content:center; color:var(--gold); }
+  .tab .ic{ display:flex; } .tab .ic .ico{ width:22px; height:22px; }
+  .chip .ico,.chip .emb{ width:15px; height:15px; }
+  .chev .ico,.back .ico{ width:16px; height:16px; }
+  .chev{ display:flex; align-items:center; }
+  .icon-btn .ico{ width:16px; height:16px; }
+  .method-card .m-ic{ display:flex; } .method-card .m-ic .ico,.method-card .m-ic .emb{ width:28px; height:28px; }
+  .thanks-badge svg{ width:40px; height:40px; }
+  .chat-input-bar button{ display:flex; align-items:center; justify-content:center; }
+  .chat-input-bar button .ico{ width:18px; height:18px; }
+  .lang-check{ color:var(--gold); display:flex; } .lang-check .ico{ width:16px; height:16px; }
+  .balance-sub{ font-size:12.5px; color:var(--text-dim); margin-top:2px; }
+  .flag{ display:inline-block; width:22px; height:15px; border-radius:3px; vertical-align:-2px; margin-right:9px; box-shadow:0 0 0 1px rgba(255,255,255,.12); }
+  .flag.ru{ background:linear-gradient(#fff 33.3%,#0039A6 33.3% 66.6%,#D52B1E 66.6%); }
+  .flag.ua{ background:linear-gradient(#0057B7 50%,#FFD700 50%); }
+  .flag.gb{ background:linear-gradient(#C8102E,#C8102E) center/100% 22% no-repeat,linear-gradient(#C8102E,#C8102E) center/16% 100% no-repeat,linear-gradient(#fff,#fff) center/100% 40% no-repeat,linear-gradient(#fff,#fff) center/30% 100% no-repeat,#012169; }
+
+  .pills-row{ display:flex; align-items:center; gap:8px; padding:12px 16px 0; }
+  .pill{ display:flex; align-items:center; gap:7px; padding:7px 13px; border-radius:999px; background:var(--bg-elevated); border:1px solid var(--stroke); font-size:13.5px; font-weight:700; cursor:pointer; white-space:nowrap; }
+  .pill.nick{ flex:1; min-width:0; padding:5px 14px 5px 5px; }
+  .pill.nick .name{ overflow:hidden; text-overflow:ellipsis; }
+  .pill .avatar{ width:30px; height:30px; font-size:13px; }
+  .pill .emb{ width:19px; height:19px; }
+  .balance-sub .emb{ width:14px; height:14px; vertical-align:-2px; }
+  .grid-2.gap{ margin-top:9px; }
+  select{ width:100%; padding:12px 38px 12px 14px; border-radius:var(--radius-sm); border:1px solid var(--stroke); background-color:var(--bg-card); color:var(--text); font-size:14px; font-family:inherit; outline:none; -webkit-appearance:none; appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2396969E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 13px center; }
+  select option{ background:#17171A; color:#F5F5F2; }
+  #pay-btn{ text-transform:uppercase; letter-spacing:.6px; }
+  .thanks-wrap p{ white-space:pre-line; max-width:300px; }
+
+  .balance-card{ text-align:center; padding:22px 20px 18px; }
+  .balance-card > *{ position:relative; z-index:1; }
+  .balance-card::after{ right:auto; left:50%; top:50%; margin:-58px 0 0 -52px; z-index:0; pointer-events:none; }
+  .balance-label{ font-size:12.5px; letter-spacing:.3px; }
+  .balance-amount{ font-size:40px; display:flex; align-items:center; justify-content:center; gap:10px; margin-top:6px; }
+  .balance-amount .emb{ width:32px; height:32px; }
+  .balance-amount span{ margin:0; font-size:16px; }
+  .balance-sub{ font-size:13px; margin:4px 0 2px; }
+  .input-wrap{ position:relative; }
+  .input-wrap input{ padding-right:128px; }
+  .input-chip{ position:absolute; right:7px; top:50%; transform:translateY(-50%); border:none; background:var(--gold-soft); color:var(--gold); font-size:11.5px; font-weight:700; padding:7px 11px; border-radius:999px; cursor:pointer; }
+  .preset-row .emb{ width:13px; height:13px; vertical-align:-2px; }
+  .total-sub{ text-align:right; font-size:11.5px; color:var(--text-dim); margin-top:3px; }
+
+/* ===== v2: анимации, скелетоны, светлая тема, таймлайн, карточки ===== */
+.screen.active{ animation:scrIn .28s cubic-bezier(.2,.8,.2,1); }
+@keyframes scrIn{ from{ opacity:0; transform:translateY(10px);} to{ opacity:1; transform:none; } }
+button,.tab,.order-card{ transition:transform .12s ease, filter .12s ease; }
+button:active,.tab:active,.order-card:active{ transform:scale(.97); }
+.skel{ margin:0 16px 10px; height:78px; border-radius:var(--radius-lg); border:1px solid var(--stroke-soft);
+  background:linear-gradient(100deg,var(--bg-card) 30%,var(--bg-card-2) 50%,var(--bg-card) 70%); background-size:200% 100%; animation:shim 1.2s linear infinite; }
+@keyframes shim{ from{ background-position:200% 0;} to{ background-position:-200% 0; } }
+.preset-row{ display:grid; grid-template-columns:repeat(auto-fill,minmax(92px,1fr)); }
+.preset-row button{ padding:12px 10px; border-radius:var(--radius-md); font-weight:700; }
+.preset-row button.active{ box-shadow:0 0 0 1px var(--gold), 0 6px 22px rgba(255,176,32,.22); transform:translateY(-2px); }
+.tl{ display:flex; align-items:center; margin-top:12px; }
+.tl i{ width:9px; height:9px; border-radius:50%; background:var(--stroke); flex:none; }
+.tl b{ flex:1; height:2px; background:var(--stroke); margin:0 3px; border-radius:2px; }
+.tl i.on,.tl b.on{ background:var(--gold); } .tl i.now{ box-shadow:0 0 0 4px var(--gold-soft); animation:pulse 1.6s infinite; }
+@keyframes pulse{ 50%{ box-shadow:0 0 0 7px transparent; } }
+.tl-lbl{ display:flex; justify-content:space-between; font-size:10px; color:var(--text-dim); margin-top:5px; }
+.confetti{ position:fixed; top:-30px; z-index:99; pointer-events:none; animation:fall linear forwards; }
+@keyframes fall{ to{ transform:translateY(112vh) rotate(540deg); opacity:.2; } }
+:root[data-theme="light"]{
+  --bg:#F4F4F1; --bg-elevated:#FFFFFF; --bg-card:#FFFFFF; --bg-card-2:#ECECE8;
+  --stroke:rgba(0,0,0,.10); --stroke-soft:rgba(0,0,0,.06); --text:#17171A; --text-dim:#6C6C74;
+  --gold:#E08A00; --gold-soft:rgba(224,138,0,.12); }
+.promo{ margin:0 16px 12px; padding:12px 14px; border-radius:var(--radius-lg); display:flex; align-items:center; gap:12px; position:relative; overflow:hidden;
+  background:linear-gradient(120deg,rgba(255,206,89,.22),rgba(255,155,26,.10)); border:1px solid rgba(255,176,32,.35); animation:scrIn .4s ease; }
+.promo::after{ content:""; position:absolute; inset:0; background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.16) 50%,transparent 65%); background-size:250% 100%; animation:shim 3.2s linear infinite; pointer-events:none; }
+.promo-pct{ flex:none; font-weight:900; font-size:20px; color:#241400; background:var(--gold-grad); padding:7px 11px; border-radius:12px; }
+.promo-txt{ font-size:13px; font-weight:650; line-height:1.3; }
+.lvl{ margin:12px 16px 0; padding:14px 15px; background:var(--bg-card); border:1px solid var(--stroke); border-radius:var(--radius-lg); }
+.lvl-top{ display:flex; justify-content:space-between; align-items:center; font-weight:750; font-size:15px; }
+.lvl-top span{ font-size:12px; font-weight:600; color:var(--text-dim); }
+.lvl-bar{ height:8px; border-radius:99px; background:var(--bg-card-2); margin-top:10px; overflow:hidden; }
+.lvl-bar i{ display:block; height:100%; width:0; background:var(--gold-grad); border-radius:99px; transition:width .7s cubic-bezier(.2,.8,.2,1); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="gStar" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFD866"/><stop offset="1" stop-color="#FF9A1F"/></linearGradient>
+  <linearGradient id="gPrem" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#A78BFF"/><stop offset="1" stop-color="#4F52D8"/></linearGradient>
+  <linearGradient id="gCrypto" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#37B6F5"/><stop offset="1" stop-color="#1B86D0"/></linearGradient>
+</defs></svg>
+<div id="app">
+
+  <!-- ============ ГЛАВНАЯ ============ -->
+  <section class="screen active" id="screen-shop">
+    <div class="pills-row">
+      <div class="pill nick" id="open-profile"><div class="avatar" id="avatar-slot">V</div><span class="name" id="user-name">…</span></div>
+      <div class="pill" id="open-referral"><i data-e="coin"></i><span id="ref-balance-chip">0</span></div>
+      <div class="pill" id="open-price-from-ton"><i data-e="ton"></i><span id="ton-balance-chip">0.00</span></div>
+    </div>
+
+    <div class="promo" id="promo" style="display:none"><span class="promo-pct" id="promo-pct"></span><span class="promo-txt" id="promo-txt"></span></div>
+
+    <div class="balance-card">
+      <div class="balance-label" id="balance-label-text">Баланс</div>
+      <div class="balance-amount" id="balance-amount">0.000 <span>TON</span></div>
+      <div class="balance-sub" id="balance-sub">≈ 0.00 грн</div>
+      <div class="balance-actions">
+        <button id="btn-topup"><span id="btn-topup-text">Пополнить</span></button>
+        <button id="btn-withdraw"><span id="btn-withdraw-text">Вывести</span></button>
+        <button class="primary" id="btn-buy-main"><span id="btn-buy-text">Купить</span></button>
+      </div>
+    </div>
+
+    <div class="list-row" id="orders-main-row" style="margin-bottom:10px" onclick="openOrders()">
+      <div class="lt"><span class="glyph"><i data-i="receipt"></i></span><div><div class="title" id="row-orders-main-title">Мои заказы</div><div class="sub" id="row-orders-main-sub">Статус и история заказов</div></div></div>
+      <span id="orders-badge" style="display:none;background:var(--gold);color:#1a1100;font-weight:800;font-size:12px;border-radius:999px;padding:2px 8px;margin-right:6px;"></span>
+      <span class="chev"><i data-i="chev"></i></span>
+    </div>
+
+    <div class="grid-2 gap">
+      <div class="card" data-section="stars" onclick="openBuySheet('stars')">
+        <div class="glyph"><i data-e="stars"></i></div>
+        <div class="card-title" id="card-stars-title">Купить TG Stars</div>
+        <div class="card-sub" id="card-stars-sub">от 50 шт</div>
+      </div>
+      <div class="card indigo" data-section="premium" onclick="openBuySheet('premium')">
+        <div class="glyph"><i data-e="premium"></i></div>
+        <div class="card-title" id="card-premium-title">Купить TG Premium</div>
+        <div class="card-sub" id="card-premium-sub">3 / 6 / 12 мес.</div>
+      </div>
+      <div class="card indigo" data-section="ton" onclick="goto('screen-price')">
+        <div class="glyph"><i data-e="ton"></i></div>
+        <div class="card-title" id="card-ton-title">Курс TON</div>
+        <div class="card-sub" id="ton-rate-preview">1 TON ≈ 320 грн</div>
+      </div>
+      <div class="card" data-section="nft" onclick="goto('screen-nft')">
+        <div class="glyph"><i data-i="image"></i></div>
+        <div class="card-title" id="card-nft-title">NFT</div>
+        <div class="card-sub" id="card-nft-sub">курс NFT</div>
+      </div>
+      <div class="card" data-section="reviews" onclick="openLink('reviews')">
+        <div class="glyph"><i data-i="chat"></i></div>
+        <div class="card-title" id="row-reviews-title">Наши отзывы</div>
+      </div>
+      <div class="card indigo" data-section="channel" onclick="openLink('channel')">
+        <div class="glyph"><i data-i="megaphone"></i></div>
+        <div class="card-title" id="row-channel-title">Наш ТГК</div>
+      </div>
+    </div>
+
+    <div class="list-row" data-section="support" style="margin-top:9px" onclick="goto('screen-support')">
+      <div class="lt"><span class="glyph"><i data-i="lifebuoy"></i></span><div><div class="title" id="row-support-title">Поддержка</div><div class="sub" id="row-support-sub">Ответим в течение 10 минут</div></div></div>
+      <span class="chev"><i data-i="chev"></i></span>
+    </div>
+
+    <div class="bottom-spacer"></div>
+  </section>
+
+  <!-- ============ PRICE ============ -->
+  <section class="screen" id="screen-price">
+    <div class="subheader"><div class="back" onclick="goto('screen-shop')"><i data-i="back"></i></div><h2 id="price-header-title">Price</h2></div>
+    <div class="section-title" id="price-stars-h">Telegram Stars</div>
+    <div id="price-stars-list"></div>
+    <div class="section-title" id="price-premium-h">Telegram Premium</div>
+    <div id="price-premium-list"></div>
+    <div class="section-title" id="price-rates-h">Курс валют</div>
+    <div class="info-card" style="margin:0 16px 16px;">
+      <div class="kv-row"><span class="k">1 Star</span><span class="v" id="price-rate-star">0.77 грн</span></div>
+      <div class="kv-row"><span class="k">1 TON</span><span class="v" id="price-rate-ton">≈ 320 грн</span></div>
+      <div class="kv-row"><span class="k">1 $</span><span class="v" id="price-rate-usd">≈ 41.7 грн</span></div>
+    </div>
+    <div class="bottom-spacer"></div>
+  </section>
+
+  <!-- ============ НАСТРОЙКИ ============ -->
+  <section class="screen" id="screen-settings">
+    <div class="subheader"><div class="back" onclick="goto('screen-shop')"><i data-i="back"></i></div><h2 id="settings-header-title">Настройки</h2></div>
+    <div class="section-title" id="settings-lang-h">Язык интерфейса</div>
+    <div class="lang-opt active" data-lang="ru" onclick="applyLang('ru')"><span><i class="flag ru"></i>Русский</span><span class="lang-check"><i data-i="check"></i></span></div>
+    <div class="lang-opt" data-lang="ua" onclick="applyLang('ua')"><span><i class="flag ua"></i>Українська</span><span class="lang-check"></span></div>
+    <div class="lang-opt" data-lang="en" onclick="applyLang('en')"><span><i class="flag gb"></i>English</span><span class="lang-check"></span></div>
+
+    <div class="section-title" id="settings-notif-h">Уведомления</div>
+    <div class="settings-row">
+      <div><div class="t" id="settings-notif-orders-title">Статус заказа</div><div class="s" id="settings-notif-orders-sub">Сообщать об изменении статуса</div></div>
+      <div class="switch on" id="sw-orders" onclick="toggleSwitch(this)"><div class="dot"></div></div>
+    </div>
+    <div class="settings-row">
+      <div><div class="t" id="settings-notif-promo-title">Акции и скидки</div><div class="s" id="settings-notif-promo-sub">Новости магазина</div></div>
+      <div class="switch" id="sw-promo" onclick="toggleSwitch(this)"><div class="dot"></div></div>
+    </div>
+    <div class="bottom-spacer"></div>
+  </section>
+
+  <!-- ============ ПРОФИЛЬ ============ -->
+  <section class="screen" id="screen-profile">
+    <div class="subheader"><div class="back" onclick="goto('screen-shop')"><i data-i="back"></i></div><h2 id="profile-header-title">Профиль</h2></div>
+    <div style="display:flex;flex-direction:column;align-items:center;padding:6px 0 4px;">
+      <div class="avatar" id="avatar-slot-big" style="width:72px;height:72px;font-size:26px;">V</div>
+      <div style="font-size:16px;font-weight:750;margin-top:10px;" id="profile-name">…</div>
+      <div style="font-size:12px;color:var(--text-dim);" id="profile-id">ID: —</div>
+    </div>
+    <div class="info-card">
+      <div class="kv-row"><span class="k" id="profile-reg-label">Дата регистрации</span><span class="v" id="profile-date">—</span></div>
+      <div class="kv-row"><span class="k" id="profile-orders-label">Заказов</span><span class="v" id="profile-orders">0</span></div>
+      <div class="kv-row"><span class="k" id="profile-spent-label">Потрачено</span><span class="v" id="profile-spent">0 грн</span></div>
+    </div>
+    <div class="list-row" onclick="openOrders('screen-profile')">
+      <div class="lt"><span class="glyph"><i data-i="receipt"></i></span><div><div class="title" id="row-my-orders-title">Мои заказы</div></div></div>
+      <span class="chev"><i data-i="chev"></i></span>
+    </div>
+    <div class="list-row" id="open-referral-2">
+      <div class="lt"><span class="glyph"><i data-i="gift"></i></span><div><div class="title" id="row-referral-title">Реферальная программа</div></div></div>
+      <span class="chev"><i data-i="chev"></i></span>
+    </div>
+    <div class="list-row" onclick="goto('screen-settings')">
+      <div class="lt"><span class="glyph"><i data-i="settings"></i></span><div><div class="title" id="row-settings-title">Настройки</div></div></div>
+      <span class="chev"><i data-i="chev"></i></span>
+    </div>
+    <div class="bottom-spacer"></div>
+  </section>
+
+  <!-- ============ МОИ ЗАКАЗЫ ============ -->
+  <section class="screen" id="screen-orders">
+    <div class="subheader"><div class="back" onclick="goto(window.__ordersBack || 'screen-shop')"><i data-i="back"></i></div><h2 id="orders-header-title">Мои заказы</h2></div>
+    <div id="orders-list"></div>
+    <div class="bottom-spacer"></div>
+  </section>
+
+  <!-- ============ РЕФЕРАЛКА ============ -->
+  <section class="screen" id="screen-referral">
+    <div class="subheader"><div class="back" onclick="goto('screen-shop')"><i data-i="back"></i></div><h2 id="ref-header-title">Реферальная программа</h2></div>
+    <div class="ref-hero">
+      <div class="big" id="ref-percent">5%</div>
+      <div class="lab" id="ref-hero-sub-text">с каждой покупки приглашённого — вам на баланс</div>
+    </div>
+    <div class="ref-stats">
+      <div class="ref-stat"><div class="n" id="ref-count">0</div><div class="l" id="ref-invited-label">Приглашено</div></div>
+      <div class="ref-stat"><div class="n" id="ref-earned">0 грн</div><div class="l" id="ref-earned-label">Заработано</div></div>
+    </div>
+    <div class="info-card" style="margin:6px 16px 8px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div><div style="font-size:11px;color:var(--text-dim);" id="ref-bonus-label">Реферальный баланс</div><div style="font-size:20px;font-weight:800;" id="ref-bonus">0.00 грн</div></div>
+      <button class="pay-btn" style="width:auto;margin-top:0;padding:12px 16px;" id="ref-transfer-btn" onclick="transferRef()">Вывести на баланс</button>
+    </div>
+    <div class="field-label" style="margin-left:16px;" id="ref-link-field-label">Ваша ссылка</div>
+    <div class="copy-row">
+      <input type="text" id="ref-link-input" readonly value="">
+      <button id="ref-copy-btn" onclick="copyRefLink()">Копировать</button>
+    </div>
+    <div class="section-title" id="ref-how-h">Как это работает</div>
+    <div class="info-card"><div style="font-size:12.5px;color:var(--text-dim);line-height:1.6;" id="ref-how-text">
+      Поделитесь ссылкой — когда друг оформит первую покупку, вы получите бонус на баланс. Бонус начисляется автоматически, как и в боте.
+    </div></div>
+    <div class="bottom-spacer"></div>
+  </section>
+
+  <!-- ============ NFT ============ -->
+  <section class="screen" id="screen-nft">
+    <div class="subheader"><div class="back" onclick="goto('screen-shop')"><i data-i="back"></i></div><h2 id="nft-header-title">NFT-подарки</h2></div>
+    <div class="empty-state" id="nft-text"></div>
+    <div class="bottom-spacer"></div>
+  </section>
+
+  <!-- ============ ПОДДЕРЖКА ============ -->
+  <section class="screen" id="screen-support">
+    <div class="subheader"><div class="back" onclick="goto('screen-shop')"><i data-i="back"></i></div><h2 id="support-header-title">Поддержка</h2></div>
+    <div class="chat-body" id="chat-body"></div>
+    <div class="chat-input-bar">
+      <input type="text" id="chat-input" placeholder="Написать сообщение…" onkeydown="if(event.key==='Enter') sendSupportMessage()">
+      <button onclick="sendSupportMessage()"><i data-i="send"></i></button>
+    </div>
+  </section>
+
+  <!-- ============ ОПЛАТА ЗАКАЗА (полностью в HTML) ============ -->
+  <section class="screen" id="screen-payment">
+    <div class="subheader"><div class="back" onclick="goto('screen-shop')"><i data-i="back"></i></div><h2 id="pay-screen-title-text">Оплата заказа</h2></div>
+    <div class="pay-hero">
+      <div class="amt" id="pay-hero-amount">0.00 грн</div>
+      <div class="num" id="pay-hero-num">ORD-000000</div>
+    </div>
+    <div id="payment-content"></div>
+    <div class="bottom-spacer"></div>
+  </section>
+
+  <!-- ============ ОКНО ПОСЛЕ ПОКУПКИ ============ -->
+  <section class="screen" id="screen-thanks">
+    <div class="thanks-wrap">
+      <div class="thanks-badge" id="thanks-badge"><i data-i="check"></i></div>
+      <h2 id="thanks-title">Оплата прошла успешно!</h2>
+      <p id="thanks-text">Спасибо за покупку!</p>
+      <div class="order-num-txt" id="order-num-text">ORD-000000</div>
+      <div class="thanks-actions">
+        <button class="btn-gold" id="btn-leave-review" onclick="openLink('admin')">Написать отзыв в @StarlifyAdmin</button>
+        <button class="btn-gold" id="btn-thanks-orders" onclick="openOrders()">📦 Мои заказы</button>
+        <button class="btn-ghost" id="btn-done" onclick="goto('screen-shop')">Готово</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAB BAR ============ -->
+  <div class="tabbar" id="tabbar">
+    <button class="tab active" data-tab="screen-shop" onclick="goto('screen-shop')"><span class="ic"><i data-i="bag"></i></span><span id="tab-shop-label">Покупка</span></button>
+    <button class="tab" data-tab="screen-price" onclick="goto('screen-price')"><span class="ic"><i data-i="chart"></i></span><span id="tab-price-label">Price</span></button>
+    <button class="tab" data-tab="screen-settings" onclick="goto('screen-settings')"><span class="ic"><i data-i="settings"></i></span><span id="tab-settings-label">Настройки</span></button>
+    <button class="tab" data-tab="screen-profile" onclick="goto('screen-profile')"><span class="ic"><i data-i="user"></i></span><span id="tab-profile-label">Профиль</span></button>
+  </div>
+
+  <!-- ============ SHEET: ОКНО ПОКУПКИ ============ -->
+  <div class="sheet-overlay" id="sheet-overlay" onclick="closeAllSheets()"></div>
+  <div class="sheet" id="buy-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="buy-sheet-title">Окно покупки</div>
+    <div class="pills-row" style="padding:10px 0 2px; justify-content:flex-end;">
+      <div class="pill"><i data-e="coin"></i><span id="buy-coins">0</span></div>
+      <div class="pill"><i data-e="ton"></i><span id="buy-ton">0.00</span></div>
+    </div>
+
+    <div class="field-label" id="who-label-text">Кому купить</div>
+    <div class="input-wrap"><input type="text" id="username-input" placeholder="Введите юзернейм" autocapitalize="off" autocomplete="off" spellcheck="false"><button type="button" class="input-chip" id="btn-my-username" onclick="fillMyUsername()">Ваш юзернейм</button></div>
+
+    <div class="field-label" id="product-label-text">Товар</div>
+    <select id="product-select" onchange="selectProduct(this.value)">
+      <option value="stars">TG Stars</option><option value="premium">TG Premium</option>
+    </select>
+
+    <div id="block-stars">
+      <div class="field-label" id="count-label-text">Введите количество (мин. 50)</div>
+      <input type="number" id="count-input" value="50" min="50" step="1" inputmode="numeric" oninput="onCountChange()">
+      <div class="preset-row" id="preset-row"></div>
+    </div>
+    <div id="block-premium" style="display:none;">
+      <div class="field-label" id="plan-label-text">Выберите срок</div>
+      <div class="prem-options" id="prem-options"></div>
+    </div>
+
+    <div class="field-label" id="pay-take-label-text">Вы берёте оплату</div>
+    <select id="pay-select" onchange="STATE.payMethod=this.value"></select>
+
+    <div class="summary-row">
+      <div class="lab" id="total-label-text">К оплате</div>
+      <div class="val" id="total-value">38.50 <small>грн</small></div>
+    </div>
+    <div class="total-sub" id="total-sub"></div>
+    <div class="hint-err" id="err-text"></div>
+    <button class="pay-btn" id="pay-btn" onclick="submitOrder()">Оплатить</button>
+  </div>
+
+  <!-- ============ SHEET: ПОПОЛНИТЬ ============ -->
+  <div class="sheet" id="topup-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="topup-title-text">Пополнить баланс</div>
+    <div class="sheet-rate" id="topup-sub-text">Средства зачисляются в течение нескольких минут</div>
+    <div class="field-label" id="topup-method-label-text">Способ пополнения</div>
+    <div id="topup-methods"></div>
+    <div class="field-label" id="topup-amount-label-text">Сумма, грн</div>
+    <input type="number" id="topup-amount" placeholder="300" min="1">
+    <div class="hint-err" id="topup-err"></div>
+    <button class="pay-btn" id="topup-btn-text" onclick="submitTopup()">Пополнить</button>
+  </div>
+
+  <!-- ============ SHEET: ЗАКАЗ ============ -->
+  <div class="sheet" id="order-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="order-sheet-num">ORD</div>
+    <div class="sheet-rate" id="order-sheet-status"></div>
+    <div id="order-sheet-rows"></div>
+    <div class="hint-err" id="order-sheet-err"></div>
+    <div class="sheet-rate" id="order-sheet-note" style="margin:10px 0 0;"></div>
+    <button class="btn-ghost-full" id="order-sheet-cancel" style="display:none;"></button>
+    <button class="pay-btn" id="order-sheet-close" style="margin-top:10px;"></button>
+  </div>
+
+  <!-- ============ SHEET: ВЫВЕСТИ ============ -->
+  <div class="sheet" id="withdraw-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="withdraw-title-text">Вывести средства</div>
+    <div class="sheet-rate"><span id="withdraw-balance-label-text">Баланс:</span> <span id="withdraw-balance">0.00</span> грн</div>
+    <div class="field-label" id="withdraw-amount-label-text">Сумма, грн</div>
+    <input type="number" id="withdraw-amount" min="1">
+    <div class="field-label" id="withdraw-req-label-text">Реквизиты (карта или крипто-кошелёк)</div>
+    <input type="text" id="withdraw-req">
+    <div class="hint-err" id="withdraw-err"></div>
+    <button class="pay-btn" id="withdraw-btn-text" onclick="submitWithdraw()">Отправить заявку</button>
+  </div>
+
+</div>
+
+<script>
+/* =======================================================
+   НАСТРОЙКИ ПРОЕКТА — впишите свои значения
+   ======================================================= */
+const CONFIG = {
+  botUsername: "StarlifyShopBot",      // TODO: реальный @username вашего бота (для реф. ссылок)
+  apiBase: "",                          // TODO: адрес вашего API, напр. "https://your-domain.com/api"
+                                         // Пока пусто — приложение работает в демо-режиме без сервера,
+                                         // но всё оформление и «оплата» остаются внутри HTML, никуда не уходя.
+  cardNumber: "0000 0000 0000 0000",    // номер карты для приёма оплаты
+  cardHolder: "IVAN IVANOV",
+  reviewAdminUrl: "https://t.me/StarlifyAdmin",   // отзывы после покупки пишут сюда
+  channelReviewsUrl: "https://t.me/StarlifyReviews",
+  channelMainUrl: "https://t.me/StarlifyStars",
+};
+
+const tg = window.Telegram ? window.Telegram.WebApp : null;
+if (tg) { tg.ready(); tg.expand(); }
+
+/* ---------------- i18n ---------------- */
+
+/* ---------------- ИКОНКИ И ЭМБЛЕМЫ ----------------
+   Чтобы заменить эмблему на свой логотип: положите файл рядом с webapp.html (например assets/ton.svg)
+   и впишите в EMBLEMS нужный ключ:  ton: '<img class="emb" src="assets/ton.svg" alt="">'  */
+const _s = p => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const ICONS = {
+  x:_s('<path d="M18 6 6 18M6 6l12 12"/>'), chev:_s('<path d="m9 18 6-6-6-6"/>'), back:_s('<path d="m15 18-6-6 6-6"/>'),
+  check:_s('<path d="M20 6 9 17l-5-5"/>'), clock:_s('<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>'),
+  send:_s('<path d="m22 2-7 20-4-9-9-4zM22 2 11 13"/>'), user:_s('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
+  bag:_s('<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/>'),
+  chart:_s('<path d="M3 3v18h18M7 15l4-4 3 3 5-6"/>'), settings:_s('<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>'),
+  gift:_s('<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>'),
+  image:_s('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4-4L5 21"/>'),
+  chat:_s('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'),
+  megaphone:_s('<path d="m3 11 18-5v12L3 14v-3zM11.6 16.8a3 3 0 1 1-5.8-1.6"/>'),
+  lifebuoy:_s('<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><path d="m4.9 4.9 4.3 4.3M14.8 14.8l4.3 4.3M14.8 9.2l4.3-4.3M4.9 19.1l4.3-4.3"/>'),
+  receipt:_s('<path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-3 2-3-2-3 2-3-2-3 2zM8 8h8M8 12h8"/>'),
+  card:_s('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>'),
+};
+const _e = inner => `<svg class="emb" viewBox="0 0 32 32">${inner}</svg>`;
+const EMBLEMS = {
+  stars:_e('<path fill="url(#gStar)" stroke="url(#gStar)" stroke-width="2" stroke-linejoin="round" d="M16 3.5l3.7 7.9 8.6 1.1-6.3 5.9 1.6 8.6L16 22.8l-7.6 4.2 1.6-8.6-6.3-5.9 8.6-1.1z"/>'),
+  premium:_e('<path fill="url(#gPrem)" stroke="url(#gPrem)" stroke-width="1.5" stroke-linejoin="round" d="M16 2c1.2 8.2 5.6 12.8 14 14-8.4 1.2-12.8 5.8-14 14-1.2-8.2-5.6-12.8-14-14C10.4 14.8 14.8 10.2 16 2z"/>'),
+  ton:_e('<circle cx="16" cy="16" r="15" fill="#0098EA"/><path fill="#fff" d="M9.6 9.5h12.8c.9 0 1.4 1 .9 1.7l-6.5 10.7a.9.9 0 0 1-1.6 0L8.7 11.2c-.5-.7 0-1.7.9-1.7z"/><path stroke="#0098EA" stroke-width="1.6" d="M16 10v11"/>'),
+  coin:_e('<circle cx="16" cy="16" r="15" fill="url(#gStar)"/><circle cx="16" cy="16" r="9" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="2.4"/>'),
+  crypto:_e('<circle cx="16" cy="16" r="15" fill="url(#gCrypto)"/><circle cx="16" cy="16" r="7" fill="none" stroke="#fff" stroke-width="3"/>'),
+};
+const icon = n => ICONS[n] || "";
+/* ВАШИ ЭМБЛЕМЫ: положите файл в папку assets/ и впишите путь, например  ton:"assets/ton.svg"
+   (подойдёт .svg, .png, .webp; лучше квадратные). Пустая строка = встроенная эмблема. */
+const CUSTOM_EMBLEMS = { stars:"", premium:"", ton:"", crypto:"", coin:"" };
+const emblem = n => CUSTOM_EMBLEMS[n] ? `<img class="emb" src="${CUSTOM_EMBLEMS[n]}" alt="">` : (EMBLEMS[n] || "");
+const methodIcon = id => id === "crypto" ? emblem("crypto") : icon(id);
+function hydrateIcons(root){
+  (root || document).querySelectorAll("i[data-i],i[data-e]").forEach(el=>{
+    el.outerHTML = el.dataset.i ? icon(el.dataset.i) : emblem(el.dataset.e);
+  });
+}
+
+let currentLang = "ru";
+const LOC = {
+  ru:{
+    tab_shop:"Покупка", tab_price:"Price", tab_settings:"Настройки", tab_profile:"Профиль",
+    row_sub_profile:"Нажмите, чтобы открыть профиль",
+    balance_label:"Баланс", btn_topup:"Пополнить", btn_withdraw:"Вывести", btn_buy:"Купить",
+    sect_catalog:"Каталог", sect_other:"Прочее", sect_info:"Информация",
+    card_stars_title:"Купить TG Stars", card_stars_sub:"от 50 шт · {rate} грн/шт",
+    card_premium_title:"Купить TG Premium", card_premium_sub:"3 / 6 / 12 мес.",
+    card_ton_title:"Курс TON", card_nft_title:"NFT", card_nft_sub:"курс NFT",
+    row_reviews:"Наши отзывы", row_channel:"Наш ТГК", row_support:"Поддержка", row_support_sub:"Ответим в течение 10 минут",
+    price_title:"Price", price_stars_h:"Telegram Stars", price_premium_h:"Telegram Premium", price_rates_h:"Курс валют",
+    settings_title:"Настройки", settings_lang_h:"Язык интерфейса", settings_notif_h:"Уведомления",
+    settings_notif_orders:"Статус заказа", settings_notif_orders_sub:"Сообщать об изменении статуса",
+    settings_notif_promo:"Акции и скидки", settings_notif_promo_sub:"Новости магазина",
+    profile_title:"Профиль", profile_reg:"Дата регистрации", profile_orders:"Заказов", profile_spent:"Потрачено",
+    row_my_orders:"Мои заказы", row_referral:"Реферальная программа", row_settings:"Настройки",
+    orders_title:"Мои заказы", orders_empty:"Заказов пока нет.\nОформите первую покупку на главной странице.",
+    ref_title:"Реферальная программа", ref_hero_sub:"с каждой покупки приглашённого — вам на баланс",
+    ref_invited:"Приглашено", ref_earned:"Заработано", ref_link_label:"Ваша ссылка", ref_copy:"Копировать",
+    ref_how_h:"Как это работает",
+    ref_how_text:"Поделитесь ссылкой — когда друг оформит первую покупку, вы получите бонус на баланс, которым можно оплатить следующий заказ. Бонус начисляется автоматически, как и в боте.",
+    nft_title:"NFT-подарки", nft_text:"Раздел с NFT-подарками Telegram скоро появится здесь.\nПока что оформить покупку можно через поддержку.",
+    support_title:"Поддержка", support_hello:"Здравствуйте! Опишите вопрос — сообщение уйдёт напрямую администратору Starlify Shop.",
+    support_placeholder:"Написать сообщение…", support_reply:"Сообщение передано администратору, ответ придёт сюда же.",
+    buy_title:"Окно покупки", buy_rate:"Курс: 1 Star = {rate} грн",
+    seg_stars:"TG Stars", seg_premium:"TG Premium", who_label:"Кому купить", who_mine:"Ваш юзернейм", who_custom:"Ввести юзернейм",
+    count_label:"Введите количество (мин. 50)", plan_label:"Выберите срок", pay_take_label:"Вы берёте оплату",
+    total_label:"К оплате", btn_pay:"Оплатить", product_label:"Товар", username_ph:"Введите юзернейм", err_no_username:"У вас не задан юзернейм в Telegram — введите его вручную",
+    err_username:"Введите корректный юзернейм получателя", err_min_count:"Минимальное количество — 50 звёзд",
+    topup_title:"Пополнить баланс", topup_sub:"Средства зачисляются в течение нескольких минут",
+    topup_method_label:"Способ пополнения", topup_amount_label:"Сумма, грн", btn_topup2:"Пополнить",
+    err_amount:"Введите сумму больше нуля",
+    withdraw_title:"Вывести средства", withdraw_balance:"Баланс:", withdraw_amount_label:"Сумма, грн",
+    withdraw_req_label:"Реквизиты (карта или крипто-кошелёк)", btn_withdraw2:"Отправить заявку",
+    err_over_balance:"Сумма превышает баланс", err_requisites:"Укажите реквизиты для вывода",
+    pay_screen_title:"Оплата заказа", pay_crypto_h:"Оплата через CryptoBot",
+    pay_crypto_text:"Нажмите «Открыть счёт», оплатите точную сумму в USDT или TON, затем нажмите «Проверить оплату» — всё это можно сделать не выходя из приложения.",
+    btn_open_invoice:"Открыть счёт в CryptoBot", btn_check_payment:"Проверить оплату", checking:"Проверяем оплату…",
+    pay_card_h:"Оплата картой", pay_card_text:"Переведите указанную сумму на карту и нажмите «Я оплатил», чтобы прикрепить чек — всё здесь же, в приложении.",
+    card_number_label:"Номер карты", card_holder_label:"Получатель", btn_copy:"Скопировать",
+    btn_i_paid:"Я оплатил", proof_label:"Комментарий к чеку (необязательно)", btn_send_proof:"Отправить на проверку",
+    method_crypto_title:"CryptoBot", method_crypto_sub:"USDT / TON, мгновенно",
+    method_card_title:"Украинская карта", method_card_sub:"Приват / Моно",
+    method_balance_title:"С баланса", row_orders_sub:"Статус и история заказов", btn_my_orders:"📦 Мои заказы",
+    topup_pay_title:"Пополнение баланса", topup_card_text:"Переведите точную сумму на карту и нажмите «Я оплатил». Админ проверит перевод и зачислит деньги на баланс — бот пришлёт сообщение.",
+    topup_crypto_text:"Оплатите счёт в CryptoBot — баланс пополнится автоматически, обычно за минуту.",
+    topup_review_title:"Заявка отправлена", topup_review_text:"Деньги появятся на балансе после проверки. Бот напишет вам, когда это произойдёт.",
+    topup_done_title:"Баланс пополнен!", topup_done_text:"Теперь вы можете оплачивать заказы с баланса.", topup_num:"Пополнение №{n}",
+    thanks_title_paid:"Оплата прошла успешно!", thanks_title_review:"Чек отправлен на проверку",
+    thanks_title_crypto:"Оплата получена — заказ на рассмотрении", thanks_text_crypto:"Как только админ выполнит заказ, мы напишем вам в боте — статус виден в «Мои заказы».",
+    thanks_title_balance:"Заказ оплачен и на рассмотрении", thanks_text_balance:"Деньги списаны с баланса. Как только админ выполнит заказ, мы напишем вам в боте — статус виден в «Мои заказы».",
+    thanks_text_paid:"Благодарим за покупку!\nНапишите, пожалуйста, отзыв в @StarlifyAdmin",
+    thanks_text_review:"Спасибо! Проверка обычно занимает до 15 минут — статус будет виден в «Мои заказы».",
+    btn_leave_review:"Написать отзыв в @StarlifyAdmin", err_server:"Сервер недоступен, попробуйте позже", pay_not_paid:"Оплата пока не найдена. Оплатите счёт и повторите проверку через несколько секунд.", pay_underpaid:"Оплаченная сумма меньше суммы заказа — напишите в поддержку.", pay_expired:"Счёт истёк — создайте заказ заново.", btn_cancel_order:"Отменить заказ", btn_done:"Готово", order_date_label:"Дата", order_cancelled:"Заказ отменён", order_cancel_support:"Оплаченный заказ уже обрабатывается. Для отмены напишите в поддержку.",
+    status_new:"Новый", status_wait:"Ожидает оплаты", status_review:"На проверке", status_done:"Выполнен", status_rejected:"Отклонён",
+    toast_ref_copied:"Ссылка скопирована", ref_bonus_label:"Реферальный баланс", ref_transfer_btn:"Вывести на баланс", toast_ref_transferred:"На баланс переведено {n} грн", err_ref_empty:"Пока нет реферальных бонусов", toast_topup_sent:"Заявка на пополнение отправлена",
+    toast_withdraw_sent:"Заявка на вывод отправлена, ожидайте подтверждения",
+  },
+  ua:{
+    tab_shop:"Покупка", tab_price:"Ціни", tab_settings:"Налаштування", tab_profile:"Профіль",
+    row_sub_profile:"Натисніть, щоб відкрити профіль",
+    balance_label:"Баланс", btn_topup:"Поповнити", btn_withdraw:"Вивести", btn_buy:"Купити",
+    sect_catalog:"Каталог", sect_other:"Інше", sect_info:"Інформація",
+    card_stars_title:"Купити TG Stars", card_stars_sub:"від 50 шт · {rate} грн/шт",
+    card_premium_title:"Купити TG Premium", card_premium_sub:"3 / 6 / 12 міс.",
+    card_ton_title:"Курс TON", card_nft_title:"NFT", card_nft_sub:"курс NFT",
+    row_reviews:"Наші відгуки", row_channel:"Наш ТГК", row_support:"Підтримка", row_support_sub:"Відповімо протягом 10 хвилин",
+    price_title:"Ціни", price_stars_h:"Telegram Stars", price_premium_h:"Telegram Premium", price_rates_h:"Курс валют",
+    settings_title:"Налаштування", settings_lang_h:"Мова інтерфейсу", settings_notif_h:"Сповіщення",
+    settings_notif_orders:"Статус замовлення", settings_notif_orders_sub:"Повідомляти про зміну статусу",
+    settings_notif_promo:"Акції та знижки", settings_notif_promo_sub:"Новини магазину",
+    profile_title:"Профіль", profile_reg:"Дата реєстрації", profile_orders:"Замовлень", profile_spent:"Витрачено",
+    row_my_orders:"Мої замовлення", row_referral:"Реферальна програма", row_settings:"Налаштування",
+    orders_title:"Мої замовлення", orders_empty:"Замовлень поки немає.\nОформіть першу покупку на головній сторінці.",
+    ref_title:"Реферальна програма", ref_hero_sub:"з кожної покупки запрошеного — вам на баланс",
+    ref_invited:"Запрошено", ref_earned:"Зароблено", ref_link_label:"Ваше посилання", ref_copy:"Копіювати",
+    ref_how_h:"Як це працює",
+    ref_how_text:"Поділіться посиланням — коли друг оформить першу покупку, ви отримаєте бонус на баланс, яким можна оплатити наступне замовлення. Бонус нараховується автоматично, як і в боті.",
+    nft_title:"NFT-подарунки", nft_text:"Розділ з NFT-подарунками Telegram скоро з'явиться тут.\nПоки що оформити покупку можна через підтримку.",
+    support_title:"Підтримка", support_hello:"Вітаємо! Опишіть питання — повідомлення надійде напряму адміністратору Starlify Shop.",
+    support_placeholder:"Написати повідомлення…", support_reply:"Повідомлення передано адміністратору, відповідь прийде сюди ж.",
+    buy_title:"Вікно покупки", buy_rate:"Курс: 1 Star = {rate} грн",
+    seg_stars:"TG Stars", seg_premium:"TG Premium", who_label:"Кому купити", who_mine:"Ваш юзернейм", who_custom:"Ввести юзернейм",
+    count_label:"Введіть кількість (мін. 50)", plan_label:"Виберіть строк", pay_take_label:"Ви приймаєте оплату",
+    total_label:"До сплати", btn_pay:"Оплатити", product_label:"Товар", username_ph:"Введіть юзернейм", err_no_username:"У вас не задано юзернейм у Telegram — введіть його вручну",
+    err_username:"Введіть коректний юзернейм отримувача", err_min_count:"Мінімальна кількість — 50 зірок",
+    topup_title:"Поповнити баланс", topup_sub:"Кошти зараховуються протягом кількох хвилин",
+    topup_method_label:"Спосіб поповнення", topup_amount_label:"Сума, грн", btn_topup2:"Поповнити",
+    err_amount:"Введіть суму більше нуля",
+    withdraw_title:"Вивести кошти", withdraw_balance:"Баланс:", withdraw_amount_label:"Сума, грн",
+    withdraw_req_label:"Реквізити (картка або крипто-гаманець)", btn_withdraw2:"Надіслати заявку",
+    err_over_balance:"Сума перевищує баланс", err_requisites:"Вкажіть реквізити для виведення",
+    pay_screen_title:"Оплата замовлення", pay_crypto_h:"Оплата через CryptoBot",
+    pay_crypto_text:"Натисніть «Відкрити рахунок», сплатіть точну суму в USDT або TON, потім натисніть «Перевірити оплату» — усе це можна зробити, не виходячи з застосунку.",
+    btn_open_invoice:"Відкрити рахунок у CryptoBot", btn_check_payment:"Перевірити оплату", checking:"Перевіряємо оплату…",
+    pay_card_h:"Оплата карткою", pay_card_text:"Переведіть вказану суму на картку і натисніть «Я оплатив», щоб додати чек — усе тут же, в застосунку.",
+    card_number_label:"Номер картки", card_holder_label:"Отримувач", btn_copy:"Скопіювати",
+    btn_i_paid:"Я оплатив", proof_label:"Коментар до чека (необов'язково)", btn_send_proof:"Надіслати на перевірку",
+    method_crypto_title:"CryptoBot", method_crypto_sub:"USDT / TON, миттєво",
+    method_card_title:"Українська картка", method_card_sub:"Приват / Моно",
+    method_balance_title:"З балансу", row_orders_sub:"Статус та історія замовлень", btn_my_orders:"📦 Мої замовлення",
+    topup_pay_title:"Поповнення балансу", topup_card_text:"Переведіть точну суму на картку та натисніть «Я оплатив». Адмін перевірить переказ і зарахує гроші на баланс — бот надішле повідомлення.",
+    topup_crypto_text:"Оплатіть рахунок у CryptoBot — баланс поповниться автоматично, зазвичай за хвилину.",
+    topup_review_title:"Заявку надіслано", topup_review_text:"Гроші з'являться на балансі після перевірки. Бот напише вам, коли це станеться.",
+    topup_done_title:"Баланс поповнено!", topup_done_text:"Тепер ви можете оплачувати замовлення з балансу.", topup_num:"Поповнення №{n}",
+    thanks_title_paid:"Оплата пройшла успішно!", thanks_title_review:"Чек надіслано на перевірку",
+    thanks_title_crypto:"Оплату отримано — замовлення на розгляді", thanks_text_crypto:"Щойно адмін виконає замовлення, ми напишемо вам у боті — статус видно в «Мої замовлення».",
+    thanks_title_balance:"Замовлення оплачено й на розгляді", thanks_text_balance:"Гроші списано з балансу. Щойно адмін виконає замовлення, ми напишемо вам у боті — статус видно в «Мої замовлення».",
+    thanks_text_paid:"Дякуємо за покупку!\nНапишіть, будь ласка, відгук у @StarlifyAdmin",
+    thanks_text_review:"Дякуємо! Перевірка зазвичай триває до 15 хвилин — статус буде видно в «Мої замовлення».",
+    btn_leave_review:"Написати відгук у @StarlifyAdmin", err_server:"Сервер недоступний, спробуйте пізніше", pay_not_paid:"Оплату поки не знайдено. Сплатіть рахунок і повторіть перевірку за кілька секунд.", pay_underpaid:"Сплачена сума менша за суму замовлення — напишіть у підтримку.", pay_expired:"Рахунок прострочено — створіть замовлення заново.", btn_cancel_order:"Скасувати замовлення", btn_done:"Готово", order_date_label:"Дата", order_cancelled:"Замовлення скасовано", order_cancel_support:"Оплачене замовлення вже обробляється. Для скасування напишіть у підтримку.",
+    status_new:"Новий", status_wait:"Очікує оплати", status_review:"На перевірці", status_done:"Виконано", status_rejected:"Відхилено",
+    toast_ref_copied:"Посилання скопійовано", ref_bonus_label:"Реферальний баланс", ref_transfer_btn:"Вивести на баланс", toast_ref_transferred:"На баланс переведено {n} грн", err_ref_empty:"Поки немає реферальних бонусів", toast_topup_sent:"Заявку на поповнення надіслано",
+    toast_withdraw_sent:"Заявку на виведення надіслано, очікуйте підтвердження",
+  },
+  en:{
+    tab_shop:"Shop", tab_price:"Price", tab_settings:"Settings", tab_profile:"Profile",
+    row_sub_profile:"Tap to open profile",
+    balance_label:"Balance", btn_topup:"Top up", btn_withdraw:"Withdraw", btn_buy:"Buy",
+    sect_catalog:"Catalog", sect_other:"More", sect_info:"Info",
+    card_stars_title:"Buy TG Stars", card_stars_sub:"from 50 pcs · {rate} UAH/pc",
+    card_premium_title:"Buy TG Premium", card_premium_sub:"3 / 6 / 12 months",
+    card_ton_title:"TON rate", card_nft_title:"NFT", card_nft_sub:"NFT rates",
+    row_reviews:"Our reviews", row_channel:"Our channel", row_support:"Support", row_support_sub:"We reply within 10 minutes",
+    price_title:"Price", price_stars_h:"Telegram Stars", price_premium_h:"Telegram Premium", price_rates_h:"Exchange rates",
+    settings_title:"Settings", settings_lang_h:"Interface language", settings_notif_h:"Notifications",
+    settings_notif_orders:"Order status", settings_notif_orders_sub:"Notify on status changes",
+    settings_notif_promo:"Promotions", settings_notif_promo_sub:"Shop news",
+    profile_title:"Profile", profile_reg:"Registered on", profile_orders:"Orders", profile_spent:"Spent",
+    row_my_orders:"My orders", row_referral:"Referral program", row_settings:"Settings",
+    orders_title:"My orders", orders_empty:"No orders yet.\nMake your first purchase on the home screen.",
+    ref_title:"Referral program", ref_hero_sub:"from every purchase of an invited friend — to your balance",
+    ref_invited:"Invited", ref_earned:"Earned", ref_link_label:"Your link", ref_copy:"Copy",
+    ref_how_h:"How it works",
+    ref_how_text:"Share the link — once a friend makes their first purchase, you get a balance bonus you can use on your next order. The bonus is credited automatically, just like in the bot.",
+    nft_title:"NFT gifts", nft_text:"The Telegram NFT gifts section is coming soon.\nFor now you can order one via support.",
+    support_title:"Support", support_hello:"Hi! Describe your question — the message goes straight to the Starlify Shop admin.",
+    support_placeholder:"Type a message…", support_reply:"Your message was forwarded to the admin, the reply will appear here.",
+    buy_title:"Purchase window", buy_rate:"Rate: 1 Star = {rate} UAH",
+    seg_stars:"TG Stars", seg_premium:"TG Premium", who_label:"Who is it for", who_mine:"Your username", who_custom:"Enter username",
+    count_label:"Enter quantity (min. 50)", plan_label:"Choose a plan", pay_take_label:"Payment method",
+    total_label:"Total", btn_pay:"Pay", product_label:"Product", username_ph:"Enter username", err_no_username:"You have no Telegram username — enter it manually",
+    err_username:"Enter a valid recipient username", err_min_count:"Minimum quantity is 50 stars",
+    topup_title:"Top up balance", topup_sub:"Funds are credited within a few minutes",
+    topup_method_label:"Top-up method", topup_amount_label:"Amount, UAH", btn_topup2:"Top up",
+    err_amount:"Enter an amount greater than zero",
+    withdraw_title:"Withdraw funds", withdraw_balance:"Balance:", withdraw_amount_label:"Amount, UAH",
+    withdraw_req_label:"Details (card or crypto wallet)", btn_withdraw2:"Send request",
+    err_over_balance:"Amount exceeds balance", err_requisites:"Enter withdrawal details",
+    pay_screen_title:"Order payment", pay_crypto_h:"Pay via CryptoBot",
+    pay_crypto_text:"Tap “Open invoice”, pay the exact amount in USDT or TON, then tap “Check payment” — all without leaving the app.",
+    btn_open_invoice:"Open invoice in CryptoBot", btn_check_payment:"Check payment", checking:"Checking payment…",
+    pay_card_h:"Card payment", pay_card_text:"Transfer the amount shown to the card, then tap “I paid” to attach a receipt — all right here in the app.",
+    card_number_label:"Card number", card_holder_label:"Recipient", btn_copy:"Copy",
+    btn_i_paid:"I paid", proof_label:"Receipt comment (optional)", btn_send_proof:"Send for review",
+    method_crypto_title:"CryptoBot", method_crypto_sub:"USDT / TON, instant",
+    method_card_title:"Ukrainian card", method_card_sub:"Privat / Mono",
+    method_balance_title:"From balance", row_orders_sub:"Order status and history", btn_my_orders:"📦 My orders",
+    topup_pay_title:"Balance top-up", topup_card_text:"Transfer the exact amount to the card and press “I paid”. The admin will verify it and credit your balance — the bot will message you.",
+    topup_crypto_text:"Pay the CryptoBot invoice — your balance is credited automatically, usually within a minute.",
+    topup_review_title:"Request sent", topup_review_text:"The money will appear on your balance after review. The bot will message you.",
+    topup_done_title:"Balance topped up!", topup_done_text:"You can now pay for orders from your balance.", topup_num:"Top-up #{n}",
+    thanks_title_paid:"Payment successful!", thanks_title_review:"Receipt sent for review",
+    thanks_title_crypto:"Payment received — order under review", thanks_text_crypto:"We'll message you in the bot once the admin completes the order — the status is in “My orders”.",
+    thanks_title_balance:"Order paid and under review", thanks_text_balance:"The amount was taken from your balance. We'll message you in the bot once the admin completes the order — the status is in “My orders”.",
+    thanks_text_paid:"Thank you for your purchase!\nPlease leave a review at @StarlifyAdmin",
+    thanks_text_review:"Thanks! Review usually takes up to 15 minutes — the status will appear in “My orders”.",
+    btn_leave_review:"Write a review to @StarlifyAdmin", err_server:"Server unavailable, try again later", pay_not_paid:"Payment not found yet. Pay the invoice and check again in a few seconds.", pay_underpaid:"Paid amount is lower than the order total — contact support.", pay_expired:"Invoice expired — create a new order.", btn_cancel_order:"Cancel order", btn_done:"Done", order_date_label:"Date", order_cancelled:"Order cancelled", order_cancel_support:"A paid order is already being processed. Contact support to cancel it.",
+    status_new:"New", status_wait:"Awaiting payment", status_review:"Under review", status_done:"Completed", status_rejected:"Rejected",
+    toast_ref_copied:"Link copied", ref_bonus_label:"Referral balance", ref_transfer_btn:"Transfer to balance", toast_ref_transferred:"{n} UAH moved to your balance", err_ref_empty:"No referral bonuses yet", toast_topup_sent:"Top-up request sent",
+    toast_withdraw_sent:"Withdrawal request sent, awaiting confirmation",
+  },
+};
+function t(key, vars){
+  let s = (LOC[currentLang] || LOC.ru)[key] || key;
+  if (key === "count_label" || key === "err_min_count") s = s.replace("50", String(DEMO.starsMin));
+  if (vars) Object.entries(vars).forEach(([k,v])=>{ s = s.replace("{"+k+"}", v); });
+  return s;
+}
+
+/* ---------------- демо-данные ---------------- */
+const DEMO = { starsMin:50, balance:0, baseRate:0.77, discount:0, rate:0.77, tonRateUah:320, usdRateUah:41.7, referralPercent:5, refCount:0, refEarned:0, refBonus:0, regDate:"24.09.2026" };
+const STAR_PRESETS = [50,100,250,500,1000];
+const PREMIUM_PRICES = { "3m":{ months:"3", price:449 }, "6m":{ months:"6", price:749 }, "1y":{ months:"12", price:1299 } };
+function premiumLabel(key){
+  const months = PREMIUM_PRICES[key].months;
+  return currentLang==="en" ? months+" months" : currentLang==="ua" ? months+" міс." : months+" мес.";
+}
+const STATE = { product:"stars", who:"custom", count:50, premiumPlan:"3m", payMethod:"crypto", topupMethod:"card" };
+let orders = [];
+let currentOrder = null;
+
+/* ---------------- API helper (заменяет tg.sendData, который закрывает приложение) ---------------- */
+async function apiCall(path, method, body){
+  if (!CONFIG.apiBase) return { error: t("err_server") };   // без сервера НИЧЕГО не считаем оплаченным
+  try{
+    const res = await fetch(CONFIG.apiBase + path, {
+      method: method || "GET",
+      headers: { "Content-Type":"application/json", "X-Telegram-Init-Data": (tg && tg.initData) || "", "ngrok-skip-browser-warning":"1" },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json().catch(()=>null);
+    if (!res.ok) return { error: (data && data.error) || t("err_server") };
+    return data;
+  }catch(e){ return null; }
+}
+
+/* ---------------- пользователь ---------------- */
+function avatarHTML(url, letter){
+  return url ? `<img src="${url}" alt="">` : letter;
+}
+function initUser(){
+  const u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+  const displayName = u ? ("@" + (u.username || "") || u.first_name || String(u.id)) : "Гость";
+  const letter = (u && (u.first_name || u.username) ? (u.first_name || u.username) : "?").charAt(0).toUpperCase();
+  document.getElementById("user-name").textContent = u ? (u.username ? "@"+u.username : (u.first_name||"Гость")) : "Гость (откройте через Telegram)";
+  document.getElementById("avatar-slot").innerHTML = avatarHTML(u && u.photo_url, letter);
+  document.getElementById("avatar-slot-big").innerHTML = avatarHTML(u && u.photo_url, letter);
+  document.getElementById("profile-name").textContent = u ? (u.username ? "@"+u.username : (u.first_name||"Гость")) : "Гость";
+  document.getElementById("profile-id").textContent = "ID: " + (u ? u.id : "—");
+  document.getElementById("username-input").value = u && u.username ? "@" + u.username : "";
+}
+initUser();
+
+/* ---------------- навигация ---------------- */
+let screenStack = ["screen-shop"];
+function goto(id, opts){
+  opts = opts || {};
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  document.querySelectorAll(".tab").forEach(el=>el.classList.toggle("active", el.dataset.tab===id));
+  const isTabScreen = ["screen-shop","screen-price","screen-settings","screen-profile"].includes(id);
+  document.getElementById("tabbar").style.display = isTabScreen ? "flex":"none";
+  if (!opts.replace) screenStack.push(id);
+  if (id === "screen-support" && !window.__supportInited){ window.__supportInited = true; renderSupportInit(); }
+  window.scrollTo(0,0);
+}
+
+/* ---------------- рендер всего статического текста под текущий язык ---------------- */
+function renderStaticText(){
+  const map = {
+    "tab-shop-label":"tab_shop","tab-price-label":"tab_price","tab-settings-label":"tab_settings","tab-profile-label":"tab_profile",
+    "user-row-sub":"row_sub_profile","balance-label-text":"balance_label","btn-topup-text":"btn_topup","btn-withdraw-text":"btn_withdraw","btn-buy-text":"btn_buy",
+    "sect-catalog-title":"sect_catalog","sect-other-title":"sect_other","sect-info-title":"sect_info",
+    "card-premium-title":"card_premium_title","card-premium-sub":"card_premium_sub",
+    "card-ton-title":"card_ton_title","card-nft-title":"card_nft_title","card-nft-sub":"card_nft_sub",
+    "row-reviews-title":"row_reviews","row-channel-title":"row_channel","row-support-title":"row_support","row-support-sub":"row_support_sub",
+    "price-header-title":"price_title","price-stars-h":"price_stars_h","price-premium-h":"price_premium_h","price-rates-h":"price_rates_h",
+    "settings-header-title":"settings_title","settings-lang-h":"settings_lang_h","settings-notif-h":"settings_notif_h",
+    "settings-notif-orders-title":"settings_notif_orders","settings-notif-orders-sub":"settings_notif_orders_sub",
+    "settings-notif-promo-title":"settings_notif_promo","settings-notif-promo-sub":"settings_notif_promo_sub",
+    "profile-header-title":"profile_title","profile-reg-label":"profile_reg","profile-orders-label":"profile_orders","profile-spent-label":"profile_spent",
+    "row-my-orders-title":"row_my_orders","row-orders-main-title":"row_my_orders","row-orders-main-sub":"row_orders_sub","btn-thanks-orders":"btn_my_orders","row-referral-title":"row_referral","row-settings-title":"row_settings",
+    "orders-header-title":"orders_title",
+    "ref-header-title":"ref_title","ref-hero-sub-text":"ref_hero_sub","ref-invited-label":"ref_invited","ref-earned-label":"ref_earned",
+    "ref-bonus-label":"ref_bonus_label","ref-transfer-btn":"ref_transfer_btn","ref-link-field-label":"ref_link_label","ref-copy-btn":"ref_copy","ref-how-h":"ref_how_h","ref-how-text":"ref_how_text",
+    "nft-header-title":"nft_title",
+    "support-header-title":"support_title",
+    "pay-screen-title-text":"pay_screen_title",
+    "buy-sheet-title":"buy_title","who-label-text":"who_label","who-mine":"who_mine","who-custom":"who_custom",
+    "count-label-text":"count_label","plan-label-text":"plan_label","pay-take-label-text":"pay_take_label","total-label-text":"total_label",
+    "topup-title-text":"topup_title","topup-sub-text":"topup_sub","topup-method-label-text":"topup_method_label",
+    "topup-amount-label-text":"topup_amount_label","topup-btn-text":"btn_topup2",
+    "withdraw-title-text":"withdraw_title","withdraw-balance-label-text":"withdraw_balance","withdraw-amount-label-text":"withdraw_amount_label",
+    "withdraw-req-label-text":"withdraw_req_label","withdraw-btn-text":"btn_withdraw2",
+    "btn-leave-review":"btn_leave_review","btn-done":"btn_done","pay-btn":"btn_pay","btn-my-username":"who_mine","product-label-text":"product_label",
+  };
+  Object.entries(map).forEach(([id,key])=>{
+    const el = document.getElementById(id);
+    if (el) el.textContent = t(key);
+  });
+  document.getElementById("username-input").placeholder = t("username_ph");
+  const ps = document.getElementById("product-select"); ps.options[0].textContent = t("seg_stars"); ps.options[1].textContent = t("seg_premium");
+  document.getElementById("card-stars-title").textContent = t("card_stars_title");
+  document.getElementById("card-stars-sub").textContent = t("card_stars_sub", {rate: DEMO.rate});
+  document.getElementById("chat-input").placeholder = t("support_placeholder");
+  document.getElementById("nft-text").textContent = t("nft_text");
+  document.querySelectorAll(".lang-opt").forEach(o=>{
+    const active = o.dataset.lang === currentLang;
+    o.classList.toggle("active", active);
+    o.querySelector(".lang-check").innerHTML = active ? icon("check") : "";
+  });
+  renderPricePage();
+  renderOrders();
+  renderReferral();
+  buildPremiumOptions();
+  buildPayMethods();
+  buildTopupMethods();
+  hydrateIcons();
+}
+function applyLang(lang){
+  currentLang = lang;
+  renderStaticText();
+}
+
+/* ---------------- баланс / шапка ---------------- */
+const tonOf = uah => uah / (DEMO.tonRateUah || 320);
+function refreshHeaderNumbers(){
+  const ton = tonOf(DEMO.balance), stars = Math.floor(DEMO.balance / (DEMO.rate || 0.77));
+  document.getElementById("balance-amount").innerHTML = emblem("ton") + ton.toFixed(3) + " <span>TON</span>";
+  document.getElementById("balance-sub").innerHTML = "≈ " + stars + " " + emblem("stars") + " · ≈ " + DEMO.balance.toFixed(2) + " грн";
+  ["ref-balance-chip","buy-coins"].forEach(id=> document.getElementById(id).textContent = DEMO.refEarned.toFixed(0));
+  ["ton-balance-chip","buy-ton"].forEach(id=> document.getElementById(id).textContent = ton.toFixed(2));
+  document.getElementById("ton-rate-preview").textContent = "1 TON ≈ " + DEMO.tonRateUah + " грн";
+  document.getElementById("profile-date").textContent = DEMO.regDate;
+  document.getElementById("withdraw-balance").textContent = DEMO.balance.toFixed(2);
+}
+refreshHeaderNumbers();
+
+document.getElementById("open-profile").onclick = ()=> goto("screen-profile");
+document.getElementById("open-referral").onclick = (e)=>{ e.stopPropagation(); goto("screen-referral"); };
+document.getElementById("open-price-from-ton").onclick = ()=> openSheet("topup-sheet");
+document.getElementById("open-referral-2").onclick = ()=> goto("screen-referral");
+document.getElementById("btn-buy-main").onclick = ()=> openBuySheet();
+
+/* ---------------- PRICE ---------------- */
+function renderPricePage(){
+  const starsWrap = document.getElementById("price-stars-list");
+  starsWrap.innerHTML = "";
+  STAR_PRESETS.forEach(qty=>{
+    const price = (qty * DEMO.rate).toFixed(2);
+    const row = document.createElement("div");
+    row.className = "price-line";
+    row.innerHTML = `<div class="pl-title">${qty} Stars</div><div class="pl-price">${price} грн</div>`;
+    starsWrap.appendChild(row);
+  });
+  const premWrap = document.getElementById("price-premium-list");
+  premWrap.innerHTML = "";
+  Object.keys(PREMIUM_PRICES).forEach(key=>{
+    const p = PREMIUM_PRICES[key];
+    const row = document.createElement("div");
+    row.className = "price-line";
+    row.innerHTML = `<div class="pl-title">Premium — ${premiumLabel(key)}</div><div class="pl-price">${p.price} грн</div>`;
+    premWrap.appendChild(row);
+  });
+  document.getElementById("price-rate-star").textContent = DEMO.rate + " грн";
+  document.getElementById("price-rate-ton").textContent = "≈ " + DEMO.tonRateUah + " грн";
+  document.getElementById("price-rate-usd").textContent = "≈ " + DEMO.usdRateUah + " грн";
+}
+
+/* ---------------- SETTINGS ---------------- */
+function toggleSwitch(el){ el.classList.toggle("on"); }
+
+/* ---------------- ПРОФИЛЬ / ЗАКАЗЫ ---------------- */
+function refreshProfileStats(){
+  document.getElementById("profile-orders").textContent = orders.length;
+  const spent = orders.reduce((s,o)=> s + (o.status==="ВЫПОЛНЕН" ? o.amount : 0), 0);
+  document.getElementById("profile-spent").textContent = spent.toFixed(0) + " грн";
+}
+function statusMeta(status){
+  const m = {
+    "НОВЫЙ":{k:"status_new", c:"st-new"}, "ОЖИДАНИЕ_ОПЛАТЫ":{k:"status_wait", c:"st-wait"},
+    "НА_ПРОВЕРКЕ":{k:"status_review", c:"st-review"}, "НА_РАССМОТРЕНИИ":{k:"status_review", c:"st-review"}, "ВЫПОЛНЕН":{k:"status_done", c:"st-done"},
+    "ОТКЛОНЕН":{k:"status_rejected", c:"st-rejected"},
+  };
+  return m[status] || m["НОВЫЙ"];
+}
+function renderOrders(){
+  const wrap = document.getElementById("orders-list");
+  if (!orders.length){
+    wrap.innerHTML = `<div class="empty-state">${t("orders_empty")}</div>`;
+    refreshProfileStats();
+    return;
+  }
+  wrap.innerHTML = "";
+  [...orders].reverse().forEach(o=>{
+    const st = statusMeta(o.status);
+    const itemText = o.label || (o.product==="stars" ? (o.count+" Stars") : ("Premium — "+premiumLabel(o.plan)));
+    const el = document.createElement("div");
+    el.className = "order-card";
+    el.innerHTML = `
+      <div class="order-top"><span class="order-num">${o.num}</span><span class="status-pill ${st.c}">${t(st.k)}</span></div>
+      <div class="order-item">${itemText}</div>
+      <div class="order-meta">${[o.target, o.amount.toFixed(2)+" грн", o.date].filter(Boolean).join(" · ")}</div>`;
+    el.style.cursor = "pointer";
+    el.onclick = ()=> openOrderSheet(o);
+    wrap.appendChild(el);
+  });
+  refreshProfileStats();
+}
+
+/* Шторка заказа: детали + отмена (только пока заказ не оплачен) */
+const CANCELABLE = ["НОВЫЙ","ОЖИДАНИЕ_ОПЛАТЫ"];
+function openOrderSheet(o){
+  const st = statusMeta(o.status);
+  const itemText = o.label || (o.product==="stars" ? (o.count+" Stars") : ("Premium — "+premiumLabel(o.plan)));
+  document.getElementById("order-sheet-num").textContent = o.num;
+  document.getElementById("order-sheet-status").textContent = t(st.k);
+  document.getElementById("order-sheet-rows").innerHTML = [
+    [t("product_label"), itemText],
+    [t("total_label"), o.amount.toFixed(2)+" грн"],
+    [t("order_date_label"), o.date || "—"],
+  ].map(([k,v])=>`<div class="kv-row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
+  document.getElementById("order-sheet-err").textContent = "";
+  const cancelBtn = document.getElementById("order-sheet-cancel");
+  const can = CANCELABLE.includes(o.status);
+  cancelBtn.style.display = can ? "" : "none";
+  cancelBtn.textContent = t("btn_cancel_order");
+  cancelBtn.disabled = false;
+  document.getElementById("order-sheet-note").textContent =
+    (!can && (o.status==="НА_ПРОВЕРКЕ" || o.status==="НА_РАССМОТРЕНИИ")) ? t("order_cancel_support") : "";
+  cancelBtn.onclick = async ()=>{
+    cancelBtn.disabled = true;
+    const r = await apiCall(`/orders/${o.num}/cancel`, "POST");
+    if (!r || r.error){
+      document.getElementById("order-sheet-err").textContent = (r && r.error) || t("err_server");
+      cancelBtn.disabled = false; return;
+    }
+    closeAllSheets(); await loadRealProfile(); toast(t("order_cancelled"));
+  };
+  const closeBtn = document.getElementById("order-sheet-close");
+  closeBtn.textContent = t("btn_done"); closeBtn.onclick = closeAllSheets;
+  openSheet("order-sheet");
+}
+
+/* ---------------- РЕФЕРАЛКА ---------------- */
+function renderReferral(){
+  document.getElementById("ref-percent").textContent = DEMO.referralPercent + "%";
+  document.getElementById("ref-count").textContent = DEMO.refCount;
+  document.getElementById("ref-earned").textContent = DEMO.refEarned.toFixed(0) + " грн";
+  document.getElementById("ref-bonus").textContent = DEMO.refBonus.toFixed(2) + " грн";
+  const u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+  const uid = u ? u.id : "000000000";
+  // Формат ссылки такой же, как в самом боте: cmd_start разбирает параметр "ref<id>"
+  document.getElementById("ref-link-input").value = `https://t.me/${CONFIG.botUsername}?start=ref${uid}`;
+}
+function copyRefLink(){
+  const input = document.getElementById("ref-link-input");
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(input.value).then(()=> toast(t("toast_ref_copied")));
+  } else {
+    input.select();
+    try{ document.execCommand("copy"); }catch(e){}
+    toast(t("toast_ref_copied"));
+  }
+}
+// Подгружаем реальные реферальные цифры и баланс с бэкенда бота, если он настроен (CONFIG.apiBase).
+// Без бэкенда цифры остаются нулевыми — честно, а не выдуманными.
+async function loadRealProfile(){
+  const d = await apiCall("/profile", "GET");
+  if (!d || d.error) return;
+  DEMO.balance = d.balance_uah || 0; DEMO.refCount = d.ref_count || 0; DEMO.refEarned = d.ref_earned || 0; DEMO.refBonus = d.ref_bonus || 0;
+  DEMO.referralPercent = d.referral_percent || DEMO.referralPercent;
+  if (d.reg_date) DEMO.regDate = d.reg_date;
+  if (d.stars_min) DEMO.starsMin = d.stars_min;
+  if (d.ton_uah) DEMO.tonRateUah = d.ton_uah;
+  if (d.usd_uah) DEMO.usdRateUah = d.usd_uah;
+  if (d.stars_rate){ DEMO.baseRate = d.stars_rate; DEMO.discount = d.discount_percent || 0; DEMO.rate = +(d.stars_rate * (1 - DEMO.discount/100)).toFixed(2); }
+  if (d.premium) Object.keys(d.premium).forEach(k=>{ if (PREMIUM_PRICES[k]) PREMIUM_PRICES[k].price = d.premium[k]; });
+  orders = d.orders || [];
+  renderStaticText(); refreshHeaderNumbers(); recalcTotal();
+  applyHiddenSections(d.hidden_sections || []);
+  updateOrdersBadge();
+}
+function applyHiddenSections(list){
+  document.querySelectorAll("[data-section]").forEach(el=>{ el.style.display = list.includes(el.dataset.section) ? "none" : ""; });
+}
+const OPEN_ORDER_STATUSES = ["НОВЫЙ","ОЖИДАНИЕ_ОПЛАТЫ","НА_ПРОВЕРКЕ","НА_РАССМОТРЕНИИ"];
+function updateOrdersBadge(){
+  const n = orders.filter(o=> OPEN_ORDER_STATUSES.includes(o.status)).length;
+  const b = document.getElementById("orders-badge");
+  b.textContent = n; b.style.display = n ? "inline-block" : "none";
+}
+function openOrders(back){
+  window.__ordersBack = back || "screen-shop";
+  goto("screen-orders"); loadRealProfile();
+}
+// Статусы заказов обновляются сами: пока открыты «Мои заказы» или есть незакрытый заказ
+setInterval(()=>{
+  if (document.hidden) return;
+  const onOrders = screenStack[screenStack.length-1] === "screen-orders";
+  if (onOrders || orders.some(o=> OPEN_ORDER_STATUSES.includes(o.status))) loadRealProfile();
+}, 15000);
+loadRealProfile();
+
+/* ---------------- ССЫЛКИ (канал/отзывы открываются сразу, без промежуточных страниц) ---------------- */
+function openLink(kind){
+  const url = kind === "admin" ? CONFIG.reviewAdminUrl : kind === "reviews" ? CONFIG.channelReviewsUrl : CONFIG.channelMainUrl;
+  if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
+  else window.open(url, "_blank");
+}
+
+/* ---------------- ПОДДЕРЖКА ---------------- */
+function scrollChatToBottom(){ const b=document.getElementById("chat-body"); setTimeout(()=> b.scrollTop=b.scrollHeight, 30); }
+function renderSupportInit(){
+  const body = document.getElementById("chat-body");
+  body.innerHTML = `<div class="msg bot">${t("support_hello")}</div>`;
+}
+async function sendSupportMessage(){
+  const input = document.getElementById("chat-input");
+  const text = input.value.trim();
+  if (!text) return;
+  const body = document.getElementById("chat-body");
+  const me = document.createElement("div"); me.className="msg me"; me.textContent=text;
+  body.appendChild(me); input.value=""; scrollChatToBottom();
+
+  // В реальном проекте — обычный HTTP-запрос к вашему API (не sendData, он бы закрыл приложение).
+  // Тот же путь, что и support_forward_to_admin в main.py, просто вызванный через HTTP, а не через chat.
+  await apiCall("/support/message", "POST", { text });
+
+  const bot = document.createElement("div"); bot.className="msg bot"; bot.textContent=t("support_reply");
+  body.appendChild(bot); scrollChatToBottom();
+}
+
+/* =======================================================
+   ОКНО ПОКУПКИ
+   ======================================================= */
+function buildPresets(){
+  const row = document.getElementById("preset-row");
+  row.innerHTML = "";
+  STAR_PRESETS.forEach(v=>{
+    const b = document.createElement("button");
+    b.innerHTML = v + " " + emblem("stars"); b.dataset.val = v;
+    b.onclick = ()=>{ STATE.count = v; syncCount(); };
+    row.appendChild(b);
+  });
+}
+buildPresets();
+function fillMyUsername(){
+  const u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+  const err = document.getElementById("err-text");
+  if (u && u.username){ document.getElementById("username-input").value = "@" + u.username; err.textContent = ""; }
+  else err.textContent = t("err_no_username");
+}
+function buildPremiumOptions(){
+  const wrap = document.getElementById("prem-options");
+  wrap.innerHTML = "";
+  Object.keys(PREMIUM_PRICES).forEach(key=>{
+    const val = PREMIUM_PRICES[key];
+    const el = document.createElement("div");
+    el.className = "prem-option" + (STATE.premiumPlan===key ? " active":"");
+    el.onclick = ()=>{ STATE.premiumPlan = key; buildPremiumOptions(); recalcTotal(); };
+    el.innerHTML = `<span class="p-title">${premiumLabel(key)}</span><span class="p-price">${val.price} грн</span>`;
+    wrap.appendChild(el);
+  });
+}
+function buildPayMethods(){
+  const sel = document.getElementById("pay-select");
+  sel.innerHTML = [["crypto","method_crypto_title"],["card","method_card_title"],["balance","method_balance_title"]].map(([id,k])=>`<option value="${id}">${t(k)}${id==="balance" ? " ("+Math.floor(DEMO.balance)+" грн)" : ""}</option>`).join("");
+  sel.value = STATE.payMethod;
+}
+function buildTopupMethods(){
+  const wrap = document.getElementById("topup-methods");
+  wrap.innerHTML = "";
+  [["crypto","crypto","method_crypto_title","method_crypto_sub"],["card","card","method_card_title","method_card_sub"]].forEach(([id,ic,tk,sk])=>{
+    const el = document.createElement("div");
+    el.className = "method-card" + (STATE.topupMethod===id ? " active":"");
+    el.onclick = ()=>{ STATE.topupMethod = id; buildTopupMethods(); };
+    el.innerHTML = `<span class="m-ic">${methodIcon(ic)}</span><div><div class="m-title">${t(tk)}</div><div class="m-sub">${t(sk)}</div></div>`;
+    wrap.appendChild(el);
+  });
+}
+
+function syncCount(){
+  document.getElementById("count-input").value = STATE.count;
+  document.querySelectorAll("#preset-row button").forEach(b=> b.classList.toggle("active", Number(b.dataset.val)===STATE.count));
+  recalcTotal();
+}
+function stepCount(delta){ STATE.count = Math.max(DEMO.starsMin, STATE.count + delta); syncCount(); }
+function onCountChange(){
+  let v = parseInt(document.getElementById("count-input").value || "0", 10);
+  if (isNaN(v)) v = DEMO.starsMin;
+  STATE.count = v; recalcTotal();
+}
+function selectProduct(p){
+  STATE.product = p;
+  document.getElementById("product-select").value = p;
+  document.getElementById("block-stars").style.display = p==="stars" ? "block":"none";
+  document.getElementById("block-premium").style.display = p==="premium" ? "block":"none";
+  recalcTotal();
+}
+function recalcTotal(){
+  let total;
+  if (STATE.product === "stars"){
+    const base = Math.round(STATE.count * DEMO.baseRate * 100)/100;   // как на сервере: скидка после округления
+    total = Math.round(base * (1 - DEMO.discount/100) * 100)/100;
+  } else total = PREMIUM_PRICES[STATE.premiumPlan].price;
+  document.getElementById("total-value").innerHTML = total.toFixed(2) + " <small>грн</small>";
+  document.getElementById("total-sub").textContent = "≈ " + (total / DEMO.tonRateUah).toFixed(3) + " TON · ≈ " + (total / DEMO.usdRateUah).toFixed(2) + " $";
+  return total;
+}
+recalcTotal();
+
+function openBuySheet(product){
+  if (product) selectProduct(product);
+  document.getElementById("err-text").textContent = "";
+  openSheet("buy-sheet");
+}
+function openSheet(id){
+  closeAllSheets();
+  document.getElementById("sheet-overlay").classList.add("active");
+  document.getElementById(id).classList.add("active");
+  if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
+}
+function closeAllSheets(){
+  document.getElementById("sheet-overlay").classList.remove("active");
+  ["buy-sheet","topup-sheet","withdraw-sheet","order-sheet"].forEach(id=> document.getElementById(id).classList.remove("active"));
+}
+document.getElementById("btn-topup").onclick = ()=> openSheet("topup-sheet");
+document.getElementById("btn-withdraw").onclick = ()=> openSheet("withdraw-sheet");
+
+function validateOrder(){
+  if (STATE.who === "custom"){
+    const v = document.getElementById("username-input").value.trim();
+    if (!/^@?[a-zA-Z][a-zA-Z0-9_]{4,31}$/.test(v)) return t("err_username");
+  }
+  if (STATE.product === "stars" && STATE.count < DEMO.starsMin) return t("err_min_count");
+  return "";
+}
+function genOrderNum(){
+  const d = new Date(); const pad = n=>String(n).padStart(2,"0");
+  return `ORD-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${Math.random().toString(16).slice(2,10).toUpperCase()}`;
+}
+
+/* ---------------- заказ и оплата: цену, счёт и проверку делает СЕРВЕР ---------------- */
+async function submitOrder(){
+  const err = validateOrder();
+  const errBox = document.getElementById("err-text");
+  if (err){ errBox.textContent = err; return; }
+  errBox.textContent = "";
+  const btn = document.getElementById("pay-btn"); btn.disabled = true;
+  const res = await apiCall("/orders", "POST", {
+    product: STATE.product, count: STATE.product==="stars" ? STATE.count : null,
+    premium_plan: STATE.product==="premium" ? STATE.premiumPlan : null,
+    who: STATE.who, target: STATE.who==="custom" ? document.getElementById("username-input").value.trim() : "",
+    pay_method: STATE.payMethod,
+  });
+  btn.disabled = false;
+  if (!res || res.error){ errBox.textContent = (res && res.error) || t("err_server"); return; }
+  if (res.on_review){       // оплата с баланса: деньги списаны, заказ на рассмотрении у админа
+    currentOrder = { num: res.order_num, amount: res.amount_uah, payMethod: "balance", status: res.status };
+    closeAllSheets(); loadRealProfile(); showThanks(currentOrder, "balance"); return;
+  }
+  const order = { num: res.order_num, amount: res.amount_uah, payMethod: STATE.payMethod, status: res.status, payUrl: res.pay_url, card: res.card };
+  currentOrder = order;
+  closeAllSheets(); goto("screen-payment"); renderPaymentScreen(order); loadRealProfile();
+}
+
+function renderPaymentScreen(order){
+  document.getElementById("pay-screen-title-text").textContent = t("pay_screen_title");
+  document.getElementById("pay-hero-amount").textContent = order.amount.toFixed(2) + " грн";
+  document.getElementById("pay-hero-num").textContent = order.num;
+  const wrap = document.getElementById("payment-content");
+  const cancel = `<button class="btn-ghost-full" id="btn-cancel-order">${t("btn_cancel_order")}</button>`;
+  if (order.payMethod === "crypto"){
+    wrap.innerHTML = `
+      <div class="info-card" style="margin:14px 0;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:6px;">${emblem("crypto")} ${t("pay_crypto_h")}</div>
+        <div style="font-size:12.5px;color:var(--text-dim);line-height:1.55;">${t("pay_crypto_text")}</div>
+      </div>
+      <button class="pay-btn" id="btn-open-invoice">${t("btn_open_invoice")}</button>
+      <button class="btn-ghost-full" id="btn-check-payment">${t("btn_check_payment")}</button>
+      <div class="hint-err" id="pay-check-err"></div>${cancel}`;
+    document.getElementById("btn-open-invoice").onclick = ()=>{
+      if (!order.payUrl) return;
+      if (tg && tg.openLink) tg.openLink(order.payUrl); else window.open(order.payUrl, "_blank");
+    };
+    document.getElementById("btn-check-payment").onclick = async ()=>{
+      const btn = document.getElementById("btn-check-payment"), errEl = document.getElementById("pay-check-err");
+      const original = btn.textContent; errEl.textContent = "";
+      btn.innerHTML = `<span class="spinner"></span>${t("checking")}`; btn.disabled = true;
+      const r = await apiCall(`/orders/${order.num}/check`, "GET");   // проверка на сервере по привязанному счёту
+      btn.textContent = original;
+      if (r && r.status === "paid"){
+        order.status = r.on_review ? "НА_РАССМОТРЕНИИ" : "ВЫПОЛНЕН"; loadRealProfile();
+        showThanks(order, r.on_review ? "crypto" : "paid"); return;
+      }
+      errEl.textContent = !r || r.error ? ((r && r.error) || t("err_server"))
+        : t(r.status==="underpaid" ? "pay_underpaid" : r.status==="expired" ? "pay_expired" : "pay_not_paid");
+      setTimeout(()=>{ btn.disabled = false; }, 4000);                 // кулдаун от спама кнопкой
+    };
+  } else {
+    const card = order.card || {};
+    wrap.innerHTML = `
+      <div class="info-card" style="margin:14px 0;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:6px;">${icon("card")} ${t("pay_card_h")}</div>
+        <div style="font-size:12.5px;color:var(--text-dim);line-height:1.55;margin-bottom:12px;">${t("pay_card_text")}</div>
+        <div class="kv-row"><span class="k">${t("card_number_label")}</span><span class="v">${card.number || "—"}</span></div>
+        <div class="kv-row"><span class="k">${t("card_holder_label")}</span><span class="v">${card.name || "—"}</span></div>
+      </div>
+      <button class="pay-btn" id="btn-copy-card">${t("btn_copy")}</button>
+      <button class="btn-ghost-full" id="btn-i-paid">${t("btn_i_paid")}</button>
+      <div id="proof-block" style="display:none;margin-top:10px;">
+        <div class="field-label">${t("proof_label")}</div>
+        <textarea id="proof-comment"></textarea>
+        <button class="pay-btn" id="btn-send-proof">${t("btn_send_proof")}</button>
+        <div class="hint-err" id="pay-check-err"></div>
+      </div>${cancel}`;
+    document.getElementById("btn-copy-card").onclick = ()=>{
+      if (navigator.clipboard) navigator.clipboard.writeText((card.number||"").replace(/\s/g,"")).then(()=> toast(t("toast_ref_copied")));
+    };
+    document.getElementById("btn-i-paid").onclick = ()=>{
+      document.getElementById("proof-block").style.display = "block";
+      document.getElementById("btn-i-paid").style.display = "none";
+    };
+    document.getElementById("btn-send-proof").onclick = async ()=>{
+      const r = await apiCall(`/orders/${order.num}/proof`, "POST", { comment: document.getElementById("proof-comment").value.trim() });
+      if (!r || r.error){ document.getElementById("pay-check-err").textContent = (r && r.error) || t("err_server"); return; }
+      loadRealProfile(); showThanks(order, "review");
+    };
+  }
+  document.getElementById("btn-cancel-order").onclick = async ()=>{
+    await apiCall(`/orders/${order.num}/cancel`, "POST"); loadRealProfile(); goto("screen-shop");
+  };
+  hydrateIcons(wrap);
+}
+
+function showThanks(order, mode, topup){
+  const badge = document.getElementById("thanks-badge");
+  const pending = (mode==="review" || mode==="balance" || mode==="crypto");
+  const suffix = {review:"review", balance:"balance", crypto:"crypto"}[mode] || "paid";
+  badge.classList.toggle("pending", pending);
+  badge.innerHTML = icon(pending ? "clock" : "check");
+  document.getElementById("thanks-title").textContent = t("thanks_title_" + suffix);
+  document.getElementById("thanks-text").textContent = t("thanks_text_" + suffix);
+  document.getElementById("order-num-text").textContent = order.num;
+  document.getElementById("btn-leave-review").style.display = topup ? "none" : "";
+  document.getElementById("btn-thanks-orders").style.display = topup ? "none" : "";
+  if (topup){
+    document.getElementById("thanks-title").textContent = t(mode==="review" ? "topup_review_title" : "topup_done_title");
+    document.getElementById("thanks-text").textContent = t(mode==="review" ? "topup_review_text" : "topup_done_text");
+  }
+  goto("screen-thanks");
+  if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
+}
+
+/* ---------------- ПОПОЛНЕНИЕ / ВЫВОД ---------------- */
+let currentTopup = null, topupTimer = null;
+async function submitTopup(){
+  const amount = parseFloat((document.getElementById("topup-amount").value||"").replace(",", "."));
+  const err = document.getElementById("topup-err");
+  if (!amount || amount<=0){ err.textContent = t("err_amount"); return; }
+  const r = await apiCall("/topup", "POST", { amount_uah: amount, method: STATE.topupMethod });
+  if (!r || r.error){ err.textContent = (r && r.error) || t("err_server"); return; }
+  err.textContent = ""; closeAllSheets();
+  currentTopup = { id: r.topup_id, amount: r.amount_uah, method: r.method, payUrl: r.pay_url, card: r.card };
+  goto("screen-payment"); renderTopupScreen(currentTopup);
+}
+function stopTopupPoll(){ if (topupTimer){ clearInterval(topupTimer); topupTimer = null; } }
+function renderTopupScreen(tp){
+  stopTopupPoll();
+  document.getElementById("pay-screen-title-text").textContent = t("topup_pay_title");
+  document.getElementById("pay-hero-amount").textContent = tp.amount.toFixed(2) + " грн";
+  document.getElementById("pay-hero-num").textContent = t("topup_num", {n: tp.id});
+  const wrap = document.getElementById("payment-content");
+  if (tp.method === "crypto"){
+    wrap.innerHTML = `
+      <div class="info-card" style="margin:14px 0;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:6px;">${emblem("crypto")} ${t("pay_crypto_h")}</div>
+        <div style="font-size:12.5px;color:var(--text-dim);line-height:1.55;">${t("topup_crypto_text")}</div>
+      </div>
+      <button class="pay-btn" id="btn-open-invoice">${t("btn_open_invoice")}</button>
+      <button class="btn-ghost-full" id="btn-check-payment">${t("btn_check_payment")}</button>
+      <div class="hint-err" id="pay-check-err"></div>`;
+    document.getElementById("btn-open-invoice").onclick = ()=>{
+      if (!tp.payUrl) return;
+      if (tg && tg.openLink) tg.openLink(tp.payUrl); else window.open(tp.payUrl, "_blank");
+    };
+    const check = async (manual)=>{
+      const errEl = document.getElementById("pay-check-err");
+      const r = await apiCall(`/topup/${tp.id}/check`, "GET");
+      if (r && r.status === "paid"){ stopTopupPoll(); loadRealProfile(); showThanks({num: t("topup_num", {n: tp.id})}, "paid", true); return; }
+      if (manual && errEl) errEl.textContent = !r || r.error ? ((r && r.error) || t("err_server"))
+        : t(r.status==="underpaid" ? "pay_underpaid" : r.status==="expired" ? "pay_expired" : "pay_not_paid");
+    };
+    document.getElementById("btn-check-payment").onclick = ()=> check(true);
+    topupTimer = setInterval(()=>{ if (screenStack[screenStack.length-1] !== "screen-payment") stopTopupPoll(); else check(false); }, 8000);
+  } else {
+    const card = tp.card || {};
+    wrap.innerHTML = `
+      <div class="info-card" style="margin:14px 0;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:6px;">${icon("card")} ${t("pay_card_h")}</div>
+        <div style="font-size:12.5px;color:var(--text-dim);line-height:1.55;margin-bottom:12px;">${t("topup_card_text")}</div>
+        <div class="kv-row"><span class="k">${t("card_number_label")}</span><span class="v">${card.number || "—"}</span></div>
+        <div class="kv-row"><span class="k">${t("card_holder_label")}</span><span class="v">${card.name || "—"}</span></div>
+      </div>
+      <button class="pay-btn" id="btn-copy-card">${t("btn_copy")}</button>
+      <button class="btn-ghost-full" id="btn-topup-paid">${t("btn_i_paid")}</button>
+      <div class="hint-err" id="pay-check-err"></div>`;
+    document.getElementById("btn-copy-card").onclick = ()=>{
+      if (navigator.clipboard) navigator.clipboard.writeText((card.number||"").replace(/\s/g,"")).then(()=> toast(t("toast_ref_copied")));
+    };
+    document.getElementById("btn-topup-paid").onclick = async ()=>{
+      const r = await apiCall(`/topup/${tp.id}/paid`, "POST");
+      if (!r || r.error){ document.getElementById("pay-check-err").textContent = (r && r.error) || t("err_server"); return; }
+      showThanks({num: t("topup_num", {n: tp.id})}, "review", true);
+    };
+  }
+  hydrateIcons(wrap);
+}
+async function submitWithdraw(){
+  const amount = parseFloat((document.getElementById("withdraw-amount").value||"").replace(",", "."));
+  const req = document.getElementById("withdraw-req").value.trim();
+  const err = document.getElementById("withdraw-err");
+  if (!amount || amount<=0){ err.textContent = t("err_amount"); return; }
+  if (amount > DEMO.balance){ err.textContent = t("err_over_balance"); return; }
+  if (!req){ err.textContent = t("err_requisites"); return; }
+  const r = await apiCall("/withdraw", "POST", { amount_uah: amount, requisites: req });
+  if (!r || r.error){ err.textContent = (r && r.error) || t("err_server"); return; }
+  err.textContent = ""; closeAllSheets(); toast(t("toast_withdraw_sent")); loadRealProfile();
+}
+
+async function transferRef(){
+  if (!DEMO.refBonus || DEMO.refBonus <= 0){ toast(t("err_ref_empty")); return; }
+  const r = await apiCall("/ref_transfer", "POST", {});
+  if (!r || r.error){ toast((r && r.error) || t("err_server")); return; }
+  toast(t("toast_ref_transferred").replace("{n}", Number(r.amount).toFixed(2)));
+  loadRealProfile();
+}
+
+/* ---------------- утилиты ---------------- */
+function toast(msg){ if (tg && tg.showPopup) tg.showPopup({ message: msg }); else alert(msg); }
+
+if (tg){
+  tg.MainButton.hide();
+  tg.BackButton.onClick(()=>{
+    const overlayOpen = document.getElementById("sheet-overlay").classList.contains("active");
+    if (overlayOpen){ closeAllSheets(); return; }
+    if (screenStack.length > 1){ screenStack.pop(); goto(screenStack.pop() || "screen-shop", {replace:true}); }
+    else tg.close();
+  });
+}
+
+renderStaticText();
+
+/* ===== v2: вибрация, переходы, тема, скелетоны, таймлайн, конфетти ===== */
+(function(){
+  const tg = window.Telegram && window.Telegram.WebApp;
+  const hap = (k,v)=>{ try{ tg.HapticFeedback && tg.HapticFeedback[k](v); }catch(e){} };
+  document.documentElement.dataset.theme = "dark"; /* всегда тёмная тема */
+  document.addEventListener("click", e=>{
+    if (e.target.closest(".tab,.preset-row button")) hap("selectionChanged");
+    else if (e.target.closest("button,.order-card")) hap("impactOccurred","light");
+  }, true);
+  const wrap = document.getElementById("orders-list");
+  if (wrap && !wrap.children.length) wrap.innerHTML = '<div class="skel"></div><div class="skel"></div><div class="skel"></div>';
+  const stepOf = {"НОВЫЙ":0,"ОЖИДАНИЕ_ОПЛАТЫ":0,"НА_ПРОВЕРКЕ":1,"НА_РАССМОТРЕНИИ":1,"ВЫПОЛНЕН":2};
+  const _ro = renderOrders;
+  renderOrders = function(){
+    _ro.apply(this, arguments);
+    const cards = document.querySelectorAll("#orders-list .order-card");
+    [...orders].reverse().forEach((o,i)=>{
+      const n = stepOf[o.status]; if (n===undefined || !cards[i]) return;
+      let h = '<div class="tl">';
+      for (let k=0;k<3;k++){ h += '<i class="'+(k<=n?'on':'')+(k===n&&n<2?' now':'')+'"></i>'+(k<2?'<b class="'+(k<n?'on':'')+'"></b>':''); }
+      cards[i].insertAdjacentHTML("beforeend", h+'</div><div class="tl-lbl"><span>'+t("status_wait")+'</span><span>'+t("status_review")+'</span><span>'+t("status_done")+'</span></div>');
+    });
+  };
+  const _st = showThanks;
+  showThanks = function(){
+    const r = _st.apply(this, arguments); hap("notificationOccurred","success");
+    for (let i=0;i<36;i++){ const c=document.createElement("div"); c.className="confetti"; c.textContent=["⭐","✨","🌟"][i%3];
+      c.style.left=Math.random()*100+"vw"; c.style.fontSize=(12+Math.random()*16)+"px";
+      c.style.animationDuration=(2.2+Math.random()*2)+"s"; c.style.animationDelay=Math.random()*.8+"s";
+      document.body.appendChild(c); setTimeout(()=>c.remove(),5200); }
+    return r;
+  };
+})();
+
+/* ===== v2.1: баннер акции ===== */
+(function(){
+  function promo(){
+    const d = (typeof DEMO!=="undefined") ? DEMO : null, el = document.getElementById("promo"); if(!d||!el) return;
+    const on = d.discount > 0;
+    el.style.display = on ? "flex" : "none";
+    if (!on) return;
+    document.getElementById("promo-pct").textContent = "−" + d.discount + "%";
+    document.getElementById("promo-txt").textContent = (d.promoText || "").replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu,"").trim() || "Скидка на Telegram Stars";
+  }
+  const _r = recalcTotal;
+  recalcTotal = function(){ const r = _r.apply(this, arguments); promo(); return r; };
+  const _f = window.fetch;
+  window.fetch = function(){ return _f.apply(this, arguments).then(res=>{
+    try{ res.clone().json().then(j=>{ if (j && "discount_percent" in j){ DEMO.promoText = j.discount_text || ""; promo(); } }).catch(()=>{}); }catch(e){}
+    return res; }); };
+})();
+
+/* ===== v3: уровни лояльности ===== */
+(function(){
+  const L=[["🥉 Bronze",0],["🥈 Silver",500],["🥇 Gold",2000],["💎 Platinum",5000]];
+  const _p = refreshProfileStats;
+  refreshProfileStats = function(){
+    _p.apply(this, arguments);
+    try{
+      const spent = orders.reduce((s,o)=> s + (o.status==="ВЫПОЛНЕН" ? o.amount : 0), 0);
+      let i=0; while (i<L.length-1 && spent>=L[i+1][1]) i++;
+      let box=document.getElementById("lvl-card");
+      if(!box){ const anchor=document.querySelector("#screen-profile .info-card"); if(!anchor) return;
+        box=document.createElement("div"); box.id="lvl-card"; box.className="lvl"; anchor.insertAdjacentElement("afterend",box); }
+      const nxt=L[i+1], pct = nxt ? Math.min(100,(spent-L[i][1])/(nxt[1]-L[i][1])*100) : 100;
+      box.innerHTML='<div class="lvl-top">'+L[i][0]+'<span>'+(nxt ? Math.round(spent)+' / '+nxt[1]+' грн → '+nxt[0] : 'MAX')+'</span></div><div class="lvl-bar"><i></i></div>';
+      requestAnimationFrame(()=>{ box.querySelector("i").style.width=pct+"%"; });
+    }catch(e){}
+  };
+})();
+</script>
+</body>
+</html>
